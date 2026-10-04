@@ -46,9 +46,9 @@ async function idbPutMany(entries) {
   });
 }
 
-async function createBrowserBackend({ wasmBase }) {
+async function createBrowserBackend({ wasmBase, wasmQuery = '' }) {
   // eslint-disable-next-line no-undef
-  const SQL = await initSqlJs({ locateFile: (f) => wasmBase + f });
+  const SQL = await initSqlJs({ locateFile: (f) => wasmBase + f + wasmQuery });
   let version = -1;
   let adapter = null;
   let dirty = false;

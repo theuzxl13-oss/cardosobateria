@@ -27,4 +27,18 @@ copy('sql.js/dist/sql-wasm.wasm', 'sql-wasm.wasm');
 copy('jspdf/dist/jspdf.umd.min.js', 'jspdf.umd.min.js');
 copy('jspdf-autotable/dist/jspdf.plugin.autotable.min.js', 'jspdf.plugin.autotable.min.js');
 fs.writeFileSync(path.join(root, 'docs', '.nojekyll'), '');
-console.log('Build concluído: docs/js/core.bundle.js e docs/vendor/*');
+
+// Versão dos arquivos: muda quando JS/CSS mudam, forçando o navegador a baixar a versão nova
+const crypto = require('crypto');
+const hash = crypto.createHash('sha256');
+for (const dir of ['docs/js', 'docs/css', 'docs/vendor']) {
+  for (const f of fs.readdirSync(path.join(root, dir)).sort()) hash.update(fs.readFileSync(path.join(root, dir, f)));
+}
+const version = hash.digest('hex').slice(0, 10);
+for (const html of ['docs/index.html', 'docs/admin/index.html']) {
+  const file = path.join(root, html);
+  const src = fs.readFileSync(file, 'utf8');
+  const out = src.replace(/((?:src|href)="(?!https?:)[^"]+\.(?:js|css))(?:\?v=[^"]*)?"/g, `$1?v=${version}"`);
+  fs.writeFileSync(file, out);
+}
+console.log(`Build concluído: docs/js/core.bundle.js e docs/vendor/* (versão dos arquivos ${version})`);

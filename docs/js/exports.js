@@ -47,7 +47,7 @@
     });
 
   CB.exportPDF = async function (r) {
-    pdfLoaded = pdfLoaded || load(CB.BASE + 'vendor/jspdf.umd.min.js').then(() => load(CB.BASE + 'vendor/jspdf.plugin.autotable.min.js'));
+    pdfLoaded = pdfLoaded || load(CB.BASE + 'vendor/jspdf.umd.min.js' + CB.vq).then(() => load(CB.BASE + 'vendor/jspdf.plugin.autotable.min.js' + CB.vq));
     await pdfLoaded;
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });

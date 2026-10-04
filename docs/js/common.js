@@ -3,6 +3,13 @@
   'use strict';
   const CB = (window.CB = window.CB || {});
   CB.BASE = CB.BASE || '';
+  // versão dos arquivos (gerada por scripts/build.js) para evitar cache antigo após atualizações
+  try {
+    CB.V = new URL(document.currentScript.src).searchParams.get('v') || '';
+  } catch (e) {
+    CB.V = '';
+  }
+  CB.vq = CB.V ? `?v=${CB.V}` : '';
 
   /* ---------------- Backend: servidor Node ou banco no navegador ---------------- */
   let backendPromise = null;
@@ -51,9 +58,9 @@
           },
         };
       }
-      await loadScript(CB.BASE + 'vendor/sql-wasm.js');
-      await loadScript(CB.BASE + 'js/core.bundle.js');
-      const b = await window.CBBackend.createBrowserBackend({ wasmBase: CB.BASE + 'vendor/' });
+      await loadScript(CB.BASE + 'vendor/sql-wasm.js' + CB.vq);
+      await loadScript(CB.BASE + 'js/core.bundle.js' + CB.vq);
+      const b = await window.CBBackend.createBrowserBackend({ wasmBase: CB.BASE + 'vendor/', wasmQuery: CB.vq });
       return b;
     })();
     return backendPromise;
