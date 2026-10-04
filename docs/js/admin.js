@@ -958,7 +958,7 @@
     const b = await CB.backend();
     content.innerHTML = `<div class="grid-2">
       <div class="card"><h2>Sobre esta demonstração</h2>
-        <p>Produtos, marcas, preços, aplicações por veículo, clientes, fornecedores e pedidos são <strong>fictícios</strong>. Os pagamentos são <strong>simulados</strong> e nenhum valor é cobrado.</p>
+        <p>As marcas são reais, mas preços, estoque, garantias, aplicações por veículo, clientes, fornecedores e pedidos são <strong>fictícios</strong>. As imagens dos produtos são ilustrativas. Os pagamentos são <strong>simulados</strong> e nenhum valor é cobrado.</p>
         <p><strong>Banco de dados:</strong> ${b.mode === 'browser' ? 'SQLite executando no navegador (WebAssembly), salvo no IndexedDB deste navegador. Os dados persistem ao atualizar ou fechar o navegador. Outro navegador/dispositivo terá sua própria cópia da demonstração.' : 'SQLite no servidor (arquivo em disco).'}</p>
         <p><strong>Chatbot:</strong> assistente baseado em regras (FAQ + catálogo), sem IA externa.</p>
       </div>

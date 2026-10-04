@@ -67,6 +67,11 @@ async function createBrowserBackend({ wasmBase }) {
     }
     version = ver || 0;
     if (seed.seedIfEmpty(defaults.admin) || !bytes) await save();
+    else if (seed.storedSeedVersion() !== seed.SEED_VERSION) {
+      // dados demonstrativos foram atualizados no site: recarrega a demonstração neste navegador
+      seed.resetDemo(defaults.admin);
+      await save();
+    }
   }
 
   async function save() {

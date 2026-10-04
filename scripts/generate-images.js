@@ -22,11 +22,8 @@ const tag = (x, y, anchor = 'end', color = '#888') =>
   `<text x='${x}' y='${y}' ${font} font-size='13' fill='${color}' text-anchor='${anchor}' letter-spacing='1'>IMAGEM ILUSTRATIVA</text>`;
 
 function battery({ brand, ah, tech, w = 600, h = 600, big: bigLabel }) {
-  const theme = {
-    Voltrix: { band: Y, text: K, accent: K },
-    Amperion: { band: W, text: K, accent: Y },
-    Cargavolt: { band: '#1f1f1f', text: Y, accent: Y },
-  }[brand] || { band: Y, text: K, accent: K };
+  // Ilustração neutra no padrão visual da Cardoso Baterias (não reproduz a embalagem/logotipo do fabricante)
+  const theme = { band: Y, text: K, accent: K };
   const big = ah >= 90;
   const bw = big ? 440 : 380;
   const bx = (w - bw) / 2;

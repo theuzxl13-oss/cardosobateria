@@ -8,7 +8,7 @@ Projeto **demonstrativo para apresentação comercial** da Cardoso Baterias. O s
 - chatbot de atendimento baseado em regras (FAQ e catálogo), sem IA paga;
 - integração com WhatsApp **(11) 96298-6718** (`https://wa.me/5511962986718`).
 
-> **Tudo é demonstrativo:** marcas, preços, aplicações por veículo, clientes, fornecedores e pedidos são fictícios. Os pagamentos são simulados e **nenhum valor é cobrado**. Endereço, CNPJ e horários aparecem como “a definir” e podem ser editados no painel.
+> **Dados demonstrativos:** as marcas são reais (Moura, Heliar, Bosch, Zetta e Pioneiro), mas preços, estoque, garantias, aplicações por veículo, clientes, fornecedores e pedidos são fictícios. As imagens dos produtos são ilustrativas (não são fotos oficiais dos fabricantes). Os pagamentos são simulados e **nenhum valor é cobrado**. Endereço, CNPJ e horários aparecem como “a definir” e podem ser editados no painel.
 
 ---
 
@@ -33,6 +33,7 @@ O site funciona como páginas estáticas no GitHub Pages. Nesse modo o banco de 
 - A loja e o painel podem ficar abertos em abas diferentes. As abas compartilham o mesmo banco e as gravações são serializadas entre elas (Web Locks), então uma aba não apaga o que a outra gravou.
 - Cada navegador ou aparelho tem a **sua própria cópia** dos dados. Um pedido feito no celular não aparece no painel aberto no notebook. Para a apresentação, use o mesmo navegador para a loja e para o painel.
 - Para recomeçar do zero, use **Painel → Demonstração → Restaurar dados iniciais** (é preciso confirmar digitando `RESTAURAR`).
+- Quando os dados demonstrativos do projeto mudam (por exemplo, troca de marcas), o navegador recarrega a demonstração automaticamente na próxima visita (controle de versão `SEED_VERSION` em `core/services/seed.js`).
 - Funciona em Chrome, Edge, Firefox e Safari atuais. Na janela anônima os dados somem quando ela é fechada.
 
 > **Segurança nesse modo:** o login do painel protege a interface da demonstração, mas como não existe servidor, quem tiver acesso ao navegador também tem acesso aos dados. Para uso real, publique no **modo servidor** (seção 7).
@@ -96,7 +97,7 @@ O banco fica em `data/cardoso.db`, é criado e migrado automaticamente e recebe 
 
 1. **Loja:** página inicial → “Encontre sua bateria” (ex.: Volkswagen → Gol → 2015) → aviso para confirmar a compatibilidade com a loja.
 2. Consulte um veículo sem aplicação cadastrada (ex.: Honda Civic 2020 no chatbot): o sistema **não adivinha** e oferece o WhatsApp.
-3. Abra um produto → “Pedir orçamento no WhatsApp” (mensagem preenchida com o produto e o veículo).
+3. Abra um produto (ex.: Bateria Heliar 60Ah) → “Pedir orçamento no WhatsApp” (mensagem preenchida com o produto e o veículo).
 4. Adicione ao carrinho → altere a quantidade (o limite é o disponível) → **Finalizar pedido**.
 5. No checkout, escolha retirada ou entrega (o endereço só é exigido na entrega) e pague com **Pix demonstrativo** ou **cartão simulado** → “Simular pagamento aprovado” ou “Simular recusa”.
 6. **Painel → Pedidos:** abra o pedido, veja a **reserva** de estoque → “Concluir venda” (a reserva vira saída) → o Dashboard é atualizado.
@@ -118,7 +119,8 @@ O banco fica em `data/cardoso.db`, é criado e migrado automaticamente e recebe 
 
 ### Catálogo e venda
 
-- 15 produtos demonstrativos (14 ativos e 1 inativo) de 3 marcas fictícias, com capacidades de **40, 45, 50, 60, 70, 90 e 95Ah**. Cada um tem SKU, descrição, imagem, Ah, tensão, CCA, dimensões, polaridade, tecnologia, garantia, preço, custo, estoque, estoque mínimo, status e aplicações por veículo (marcadas como demonstrativas).
+- 16 produtos demonstrativos (15 ativos e 1 inativo) das marcas **Moura, Heliar, Bosch, Zetta e Pioneiro**, com capacidades de **40, 45, 50, 60, 70, 90 e 95Ah**. Cada um tem SKU, descrição, imagem, Ah, tensão, polaridade, tecnologia, garantia, preço, custo, estoque, estoque mínimo, status e aplicações por veículo (marcadas como demonstrativas). CCA e dimensões ficam em branco até a loja informar os dados reais de cada linha.
+- **Fotos dos produtos:** são ilustrações no padrão visual da Cardoso. Para usar fotos reais, envie a imagem em **Painel → Produtos → Editar → Imagem principal** (ou imagens adicionais). Use fotos próprias da loja ou imagens que o distribuidor/fabricante autorize.
 - Busca e filtros por marca, capacidade, faixa de preço, disponibilidade e ofertas, com ordenação.
 - Consulta por marca, modelo e ano **somente com aplicações cadastradas**, sempre com aviso de compatibilidade. Quando não há aplicação, o site oferece o WhatsApp.
 - Carrinho com alteração de quantidade e remoção. Preço e disponibilidade são reconferidos no banco.

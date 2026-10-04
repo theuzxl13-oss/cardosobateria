@@ -1,7 +1,8 @@
 'use strict';
 /**
  * Carga inicial de dados DEMONSTRATIVOS.
- * Marcas, preços, aplicações por veículo, clientes, fornecedores e pedidos são fictícios.
+ * As marcas são reais (Moura, Heliar, Bosch, Zetta, Pioneiro), mas preços, estoque, garantias,
+ * aplicações por veículo, clientes, fornecedores e pedidos são fictícios.
  * O histórico de pedidos é criado pelas mesmas regras de negócio usadas pelo sistema
  * (reserva, baixa, liberação), com o relógio deslocado para datas passadas.
  */
@@ -10,13 +11,13 @@ const auth = require('./auth');
 const orders = require('./orders');
 const inventory = require('./inventory');
 
+/** Aumente ao mudar os dados demonstrativos: o modo navegador restaura a demo automaticamente. */
+const SEED_VERSION = '2';
+
 const DEMO_NOTE = 'Aplicação demonstrativa — confirme a compatibilidade com a loja.';
 
-const BRANDS = [
-  { name: 'Voltrix', description: 'Marca fictícia usada na demonstração.' },
-  { name: 'Amperion', description: 'Marca fictícia usada na demonstração.' },
-  { name: 'Cargavolt', description: 'Marca fictícia usada na demonstração.' },
-];
+const BRAND_NOTE = 'Marca comercializada pela loja. Preços, estoque e garantia desta demonstração são fictícios.';
+const BRANDS = ['Moura', 'Heliar', 'Bosch', 'Zetta', 'Pioneiro'].map((name) => ({ name, description: BRAND_NOTE }));
 const CATEGORIES = [
   { name: 'Automotiva leve', description: 'Carros de passeio.', sort: 1 },
   { name: 'Start-Stop (EFB/AGM)', description: 'Veículos com sistema start-stop.', sort: 2 },
@@ -25,53 +26,54 @@ const CATEGORIES = [
 
 // [sku, nome, marca, categoria, Ah, CCA, dimensões, polaridade, tecnologia, garantia, preço, promo, custo, estoque inicial, mínimo, destaque, ativo]
 const PRODUCTS = [
-  ['VTX-40D', 'Bateria Voltrix 40Ah Compacta', 'Voltrix', 'Automotiva leve', 40, 300, '187 x 127 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 15, 34990, null, 23000, 6, 2, 0, 1],
-  ['VTX-45D', 'Bateria Voltrix 45Ah', 'Voltrix', 'Automotiva leve', 45, 350, '207 x 175 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 18, 38990, 36990, 26000, 14, 4, 1, 1],
-  ['AMP-45D', 'Bateria Amperion 45Ah Selada', 'Amperion', 'Automotiva leve', 45, 360, '207 x 175 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 24, 41990, null, 28500, 8, 3, 0, 1],
-  ['AMP-50D', 'Bateria Amperion 50Ah', 'Amperion', 'Automotiva leve', 50, 400, '212 x 175 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 24, 44990, null, 30500, 12, 4, 1, 1],
-  ['CGV-50E', 'Bateria Cargavolt 50Ah (polo invertido)', 'Cargavolt', 'Automotiva leve', 50, 380, '212 x 175 x 175 mm', 'Positivo à esquerda', 'Chumbo-cálcio selada', 18, 42990, null, 29000, 5, 2, 0, 1],
-  ['VTX-60D', 'Bateria Voltrix 60Ah', 'Voltrix', 'Automotiva leve', 60, 450, '242 x 175 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 24, 47990, null, 32000, 18, 5, 1, 1],
-  ['AMP-60EFB', 'Bateria Amperion 60Ah EFB Start-Stop', 'Amperion', 'Start-Stop (EFB/AGM)', 60, 560, '242 x 175 x 190 mm', 'Positivo à direita', 'EFB (Start-Stop)', 24, 64990, 59990, 44000, 14, 3, 1, 1],
-  ['CGV-60D', 'Bateria Cargavolt 60Ah', 'Cargavolt', 'Automotiva leve', 60, 430, '242 x 175 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 18, 45990, null, 31000, 8, 4, 0, 1],
-  ['VTX-70D', 'Bateria Voltrix 70Ah', 'Voltrix', 'Automotiva leve', 70, 550, '278 x 175 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 24, 55990, null, 38000, 10, 3, 1, 1],
-  ['AMP-70AGM', 'Bateria Amperion 70Ah AGM Start-Stop', 'Amperion', 'Start-Stop (EFB/AGM)', 70, 720, '278 x 175 x 190 mm', 'Positivo à direita', 'AGM (Start-Stop)', 36, 114990, null, 82000, 7, 2, 1, 1],
-  ['CGV-70D', 'Bateria Cargavolt 70Ah', 'Cargavolt', 'Automotiva leve', 70, 520, '278 x 175 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 18, 52990, null, 36000, 2, 2, 0, 1],
-  ['VTX-90D', 'Bateria Voltrix 90Ah', 'Voltrix', 'Pickups e utilitários', 90, 700, '353 x 175 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 24, 78990, null, 54000, 12, 3, 1, 1],
-  ['AMP-90D', 'Bateria Amperion 90Ah Heavy', 'Amperion', 'Pickups e utilitários', 90, 760, '353 x 175 x 190 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 24, 82990, null, 57000, 6, 2, 0, 1],
-  ['CGV-95D', 'Bateria Cargavolt 95Ah Utilitário', 'Cargavolt', 'Pickups e utilitários', 95, 780, '353 x 175 x 190 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 18, 86990, null, 60000, 10, 2, 0, 1],
-  ['VTX-38D', 'Bateria Voltrix 38Ah (linha descontinuada)', 'Voltrix', 'Automotiva leve', 38, 280, '187 x 127 x 175 mm', 'Positivo à direita', 'Chumbo-ácido convencional', 12, 31990, null, 21000, 0, 0, 0, 0],
+  ['ZET-40D', 'Bateria Zetta 40Ah', 'Zetta', 'Automotiva leve', 40, 300, '187 x 127 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 15, 34990, null, 23000, 6, 2, 0, 1],
+  ['ZET-45D', 'Bateria Zetta 45Ah', 'Zetta', 'Automotiva leve', 45, 350, '207 x 175 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 18, 38990, 36990, 26000, 14, 4, 1, 1],
+  ['MOU-45D', 'Bateria Moura 45Ah', 'Moura', 'Automotiva leve', 45, 360, '207 x 175 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 24, 41990, null, 28500, 8, 3, 0, 1],
+  ['MOU-50D', 'Bateria Moura 50Ah', 'Moura', 'Automotiva leve', 50, 400, '212 x 175 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 24, 44990, null, 30500, 12, 4, 1, 1],
+  ['PIO-50E', 'Bateria Pioneiro 50Ah (polo invertido)', 'Pioneiro', 'Automotiva leve', 50, 380, '212 x 175 x 175 mm', 'Positivo à esquerda', 'Chumbo-cálcio selada', 18, 42990, null, 29000, 5, 2, 0, 1],
+  ['HEL-60D', 'Bateria Heliar 60Ah', 'Heliar', 'Automotiva leve', 60, 450, '242 x 175 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 24, 47990, null, 32000, 18, 5, 1, 1],
+  ['BOS-60D', 'Bateria Bosch 60Ah', 'Bosch', 'Automotiva leve', 60, 450, '242 x 175 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 24, 49990, null, 34000, 8, 3, 0, 1],
+  ['MOU-60EFB', 'Bateria Moura 60Ah EFB Start-Stop', 'Moura', 'Start-Stop (EFB/AGM)', 60, 560, '242 x 175 x 190 mm', 'Positivo à direita', 'EFB (Start-Stop)', 24, 64990, 59990, 44000, 14, 3, 1, 1],
+  ['PIO-60D', 'Bateria Pioneiro 60Ah', 'Pioneiro', 'Automotiva leve', 60, 430, '242 x 175 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 18, 45990, null, 31000, 8, 4, 0, 1],
+  ['BOS-70D', 'Bateria Bosch 70Ah', 'Bosch', 'Automotiva leve', 70, 550, '278 x 175 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 24, 55990, null, 38000, 10, 3, 1, 1],
+  ['HEL-70AGM', 'Bateria Heliar 70Ah AGM Start-Stop', 'Heliar', 'Start-Stop (EFB/AGM)', 70, 720, '278 x 175 x 190 mm', 'Positivo à direita', 'AGM (Start-Stop)', 36, 114990, null, 82000, 7, 2, 1, 1],
+  ['ZET-70D', 'Bateria Zetta 70Ah', 'Zetta', 'Automotiva leve', 70, 520, '278 x 175 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 18, 52990, null, 36000, 2, 2, 0, 1],
+  ['MOU-90D', 'Bateria Moura 90Ah', 'Moura', 'Pickups e utilitários', 90, 700, '353 x 175 x 175 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 24, 78990, null, 54000, 12, 3, 1, 1],
+  ['HEL-90D', 'Bateria Heliar 90Ah', 'Heliar', 'Pickups e utilitários', 90, 760, '353 x 175 x 190 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 24, 82990, null, 57000, 6, 2, 0, 1],
+  ['BOS-95D', 'Bateria Bosch 95Ah', 'Bosch', 'Pickups e utilitários', 95, 780, '353 x 175 x 190 mm', 'Positivo à direita', 'Chumbo-cálcio selada', 18, 86990, null, 60000, 10, 2, 0, 1],
+  ['PIO-38D', 'Bateria Pioneiro 38Ah (linha descontinuada)', 'Pioneiro', 'Automotiva leve', 38, 280, '187 x 127 x 175 mm', 'Positivo à direita', 'Chumbo-ácido convencional', 12, 31990, null, 21000, 0, 0, 0, 0],
 ];
 
 // Aplicações DEMONSTRATIVAS (não verificadas) — [sku, marca, modelo, ano inicial, ano final, motor]
 const APPLICATIONS = [
-  ['VTX-40D', 'Fiat', 'Mobi', 2017, 2024, '1.0'],
-  ['VTX-45D', 'Fiat', 'Uno', 2011, 2021, '1.0'],
-  ['VTX-45D', 'Renault', 'Kwid', 2018, 2024, '1.0'],
-  ['AMP-45D', 'Fiat', 'Uno', 2011, 2021, '1.0'],
-  ['AMP-45D', 'Volkswagen', 'up!', 2015, 2021, '1.0'],
-  ['AMP-50D', 'Chevrolet', 'Onix', 2013, 2019, '1.0 / 1.4'],
-  ['AMP-50D', 'Hyundai', 'HB20', 2013, 2019, '1.0 / 1.6'],
-  ['AMP-50D', 'Ford', 'Ka', 2015, 2021, '1.0 / 1.5'],
-  ['CGV-50E', 'Chevrolet', 'Prisma', 2013, 2019, '1.0 / 1.4'],
-  ['VTX-60D', 'Volkswagen', 'Gol', 2009, 2022, '1.0 / 1.6'],
-  ['VTX-60D', 'Volkswagen', 'Voyage', 2009, 2022, '1.0 / 1.6'],
-  ['VTX-60D', 'Renault', 'Sandero', 2012, 2022, '1.0 / 1.6'],
-  ['VTX-60D', 'Honda', 'Fit', 2009, 2021, '1.4 / 1.5'],
-  ['CGV-60D', 'Volkswagen', 'Gol', 2009, 2022, '1.0 / 1.6'],
-  ['CGV-60D', 'Toyota', 'Etios', 2013, 2021, '1.3 / 1.5'],
-  ['AMP-60EFB', 'Chevrolet', 'Onix', 2020, 2024, '1.0 Turbo'],
-  ['AMP-60EFB', 'Fiat', 'Argo', 2018, 2024, '1.0 / 1.3'],
-  ['VTX-70D', 'Toyota', 'Corolla', 2010, 2019, '1.8 / 2.0'],
-  ['VTX-70D', 'Honda', 'Civic', 2012, 2016, '1.8 / 2.0'],
-  ['VTX-70D', 'Hyundai', 'Creta', 2017, 2024, '1.6 / 2.0'],
-  ['CGV-70D', 'Toyota', 'Corolla', 2010, 2019, '1.8 / 2.0'],
-  ['AMP-70AGM', 'Jeep', 'Renegade', 2016, 2024, '1.3 Turbo / 1.8'],
-  ['AMP-70AGM', 'Jeep', 'Compass', 2017, 2024, '1.3 Turbo / 2.0'],
-  ['VTX-90D', 'Toyota', 'Hilux', 2006, 2015, '2.5 / 3.0 Diesel'],
-  ['VTX-90D', 'Chevrolet', 'S10', 2012, 2024, '2.8 Diesel'],
-  ['AMP-90D', 'Ford', 'Ranger', 2013, 2022, '2.2 / 3.2 Diesel'],
-  ['AMP-90D', 'Mitsubishi', 'L200', 2008, 2019, '3.2 Diesel'],
-  ['CGV-95D', 'Volkswagen', 'Amarok', 2011, 2022, '2.0 Diesel'],
+  ['ZET-40D', 'Fiat', 'Mobi', 2017, 2024, '1.0'],
+  ['ZET-45D', 'Fiat', 'Uno', 2011, 2021, '1.0'],
+  ['ZET-45D', 'Renault', 'Kwid', 2018, 2024, '1.0'],
+  ['MOU-45D', 'Fiat', 'Uno', 2011, 2021, '1.0'],
+  ['MOU-45D', 'Volkswagen', 'up!', 2015, 2021, '1.0'],
+  ['MOU-50D', 'Chevrolet', 'Onix', 2013, 2019, '1.0 / 1.4'],
+  ['MOU-50D', 'Hyundai', 'HB20', 2013, 2019, '1.0 / 1.6'],
+  ['MOU-50D', 'Ford', 'Ka', 2015, 2021, '1.0 / 1.5'],
+  ['PIO-50E', 'Chevrolet', 'Prisma', 2013, 2019, '1.0 / 1.4'],
+  ['HEL-60D', 'Volkswagen', 'Gol', 2009, 2022, '1.0 / 1.6'],
+  ['HEL-60D', 'Volkswagen', 'Voyage', 2009, 2022, '1.0 / 1.6'],
+  ['HEL-60D', 'Renault', 'Sandero', 2012, 2022, '1.0 / 1.6'],
+  ['HEL-60D', 'Honda', 'Fit', 2009, 2021, '1.4 / 1.5'],
+  ['PIO-60D', 'Volkswagen', 'Gol', 2009, 2022, '1.0 / 1.6'],
+  ['PIO-60D', 'Toyota', 'Etios', 2013, 2021, '1.3 / 1.5'],
+  ['MOU-60EFB', 'Chevrolet', 'Onix', 2020, 2024, '1.0 Turbo'],
+  ['MOU-60EFB', 'Fiat', 'Argo', 2018, 2024, '1.0 / 1.3'],
+  ['BOS-70D', 'Toyota', 'Corolla', 2010, 2019, '1.8 / 2.0'],
+  ['BOS-70D', 'Honda', 'Civic', 2012, 2016, '1.8 / 2.0'],
+  ['BOS-70D', 'Hyundai', 'Creta', 2017, 2024, '1.6 / 2.0'],
+  ['ZET-70D', 'Toyota', 'Corolla', 2010, 2019, '1.8 / 2.0'],
+  ['HEL-70AGM', 'Jeep', 'Renegade', 2016, 2024, '1.3 Turbo / 1.8'],
+  ['HEL-70AGM', 'Jeep', 'Compass', 2017, 2024, '1.3 Turbo / 2.0'],
+  ['MOU-90D', 'Toyota', 'Hilux', 2006, 2015, '2.5 / 3.0 Diesel'],
+  ['MOU-90D', 'Chevrolet', 'S10', 2012, 2024, '2.8 Diesel'],
+  ['HEL-90D', 'Ford', 'Ranger', 2013, 2022, '2.2 / 3.2 Diesel'],
+  ['HEL-90D', 'Mitsubishi', 'L200', 2008, 2019, '3.2 Diesel'],
+  ['BOS-95D', 'Volkswagen', 'Amarok', 2011, 2022, '2.0 Diesel'],
 ];
 
 const SUPPLIERS = [
@@ -151,6 +153,12 @@ function ensureAdmin({ name, email, password }) {
   }
 }
 
+/** Versão dos dados demonstrativos gravada no banco (null se for anterior ao controle de versão). */
+function storedSeedVersion() {
+  const r = get().prepare("SELECT value FROM settings WHERE key = '_seed_version'").get();
+  return r ? JSON.parse(r.value) : null;
+}
+
 function isEmpty() {
   return get().prepare('SELECT COUNT(*) c FROM products').get().c === 0 && get().prepare('SELECT COUNT(*) c FROM orders').get().c === 0;
 }
@@ -184,15 +192,16 @@ function seedData() {
 
     const productId = {};
     for (const p of PRODUCTS) {
-      const [sku, name, brand, cat, ah, cca, dim, pol, tech, warranty, price, promo, cost, , min, featured, active] = p;
+      const [sku, name, brand, cat, ah, , , pol, tech, warranty, price, promo, cost, , min, featured, active] = p;
       const desc =
-        `${name} — ${tech}, ${ah}Ah, 12V. Produto e preço DEMONSTRATIVOS (marca fictícia) para apresentação do sistema.\n\n` +
-        'Antes de comprar, confirme com a loja se esta bateria é adequada ao seu veículo.';
+        `${name} — ${tech}, ${ah}Ah, 12V.\n\n` +
+        'Preço, estoque e garantia DEMONSTRATIVOS para apresentação do sistema. Especificações técnicas (dimensões, CCA, linha do fabricante) ' +
+        'devem ser confirmadas com a loja, assim como a compatibilidade com o seu veículo.';
       productId[sku] = d
         .prepare(`INSERT INTO products (sku, name, brand_id, category_id, description, image, capacity_ah, voltage, cca, dimensions, polarity, technology,
           warranty_months, price_cents, promo_price_cents, cost_cents, stock_qty, reserved_qty, min_stock, active, featured, is_demo, created_at, updated_at)
           VALUES (?,?,?,?,?,?,?,12,?,?,?,?,?,?,?,?,0,0,?,?,?,1,?,?)`)
-        .run(sku, name, brandId[brand], catId[cat], desc, `img/products/${sku.toLowerCase()}.svg`, ah, cca, `${dim} (aprox., demonstrativo)`, pol, tech, warranty, price, promo, cost, min, active, featured, ts, ts).lastInsertRowid;
+        .run(sku, name, brandId[brand], catId[cat], desc, `img/products/${sku.toLowerCase()}.svg`, ah, null, null, pol, tech, warranty, price, promo, cost, min, active, featured, ts, ts).lastInsertRowid;
     }
     for (const [sku, make, model, y1, y2, engine] of APPLICATIONS) {
       d.prepare('INSERT INTO product_applications (product_id, make, model, year_start, year_end, engine, notes, is_demo, created_at) VALUES (?,?,?,?,?,?,?,1,?)').run(productId[sku], make, model, y1, y2, engine, DEMO_NOTE, ts);
@@ -218,7 +227,7 @@ function seedData() {
     });
 
     // ---------- histórico de pedidos (últimos 30 dias) ----------
-    const commonSkus = ['VTX-45D', 'AMP-45D', 'AMP-50D', 'VTX-60D', 'VTX-60D', 'AMP-60EFB', 'VTX-70D', 'VTX-90D', 'AMP-90D', 'CGV-95D', 'CGV-50E', 'AMP-70AGM'];
+    const commonSkus = ['ZET-45D', 'MOU-45D', 'MOU-50D', 'HEL-60D', 'HEL-60D', 'MOU-60EFB', 'BOS-70D', 'MOU-90D', 'HEL-90D', 'BOS-95D', 'PIO-50E', 'HEL-70AGM'];
     const customersList = d.prepare('SELECT id, name, phone FROM customers').all();
     let created = 0;
     const makeOrder = (daysAgo, hour, { skus, source = rnd() < 0.6 ? 'site' : 'balcao', outcome }) => {
@@ -282,35 +291,36 @@ function seedData() {
       }
       if (day === 20) {
         setClock(() => at(20, 8, 40));
-        inventory.applyMovement({ productId: productId['VTX-60D'], type: 'entrada', quantity: 8, reason: 'Reposição — NF fictícia 1023', user: ADMIN, supplierId: supplierIds[0], unitCostCents: 32000 });
-        inventory.applyMovement({ productId: productId['AMP-50D'], type: 'entrada', quantity: 6, reason: 'Reposição — NF fictícia 1024', user: ADMIN, supplierId: supplierIds[1], unitCostCents: 30500 });
+        inventory.applyMovement({ productId: productId['HEL-60D'], type: 'entrada', quantity: 8, reason: 'Reposição — NF fictícia 1023', user: ADMIN, supplierId: supplierIds[0], unitCostCents: 32000 });
+        inventory.applyMovement({ productId: productId['MOU-50D'], type: 'entrada', quantity: 6, reason: 'Reposição — NF fictícia 1024', user: ADMIN, supplierId: supplierIds[1], unitCostCents: 30500 });
       }
       if (day === 12) {
         setClock(() => at(12, 18, 10));
-        const p = inventory.loadProduct(productId['CGV-60D']);
+        const p = inventory.loadProduct(productId['PIO-60D']);
         inventory.registerManual({ productId: p.id, type: 'ajuste', newQty: p.stock_qty - 1, reason: 'Ajuste de inventário — avaria constatada na contagem (demonstrativo)', user: ADMIN });
       }
       if (day === 8) {
         setClock(() => at(8, 11, 0));
-        inventory.applyMovement({ productId: productId['VTX-45D'], type: 'saida', quantity: 1, reason: 'Saída para garantia/troca com fornecedor (demonstrativo)', user: ADMIN });
+        inventory.applyMovement({ productId: productId['ZET-45D'], type: 'saida', quantity: 1, reason: 'Saída para garantia/troca com fornecedor (demonstrativo)', user: ADMIN });
       }
     }
-    // a 70Ah Cargavolt esgota com duas vendas
-    makeOrder(6, 15, { skus: ['CGV-70D'], source: 'balcao', outcome: 'concluido' });
-    makeOrder(3, 10, { skus: ['CGV-70D'], source: 'site', outcome: 'concluido' });
-    // estoque baixo na Cargavolt 60Ah
-    makeOrder(4, 14, { skus: ['CGV-60D', 'CGV-60D'], source: 'balcao', outcome: 'concluido' });
-    makeOrder(2, 16, { skus: ['CGV-60D'], source: 'balcao', outcome: 'concluido' });
+    // a Zetta 70Ah esgota com duas vendas
+    makeOrder(6, 15, { skus: ['ZET-70D'], source: 'balcao', outcome: 'concluido' });
+    makeOrder(3, 10, { skus: ['ZET-70D'], source: 'site', outcome: 'concluido' });
+    // estoque baixo na Pioneiro 60Ah
+    makeOrder(4, 14, { skus: ['PIO-60D', 'PIO-60D'], source: 'balcao', outcome: 'concluido' });
+    makeOrder(2, 16, { skus: ['PIO-60D'], source: 'balcao', outcome: 'concluido' });
     // pedido antigo sem pagamento -> expira e libera a reserva automaticamente
-    makeOrder(5, 10, { skus: ['AMP-45D'], source: 'site', outcome: 'pendente' });
+    makeOrder(5, 10, { skus: ['MOU-45D'], source: 'site', outcome: 'pendente' });
     setClock(() => at(2, 10, 30));
     orders.expireOrders(at(2, 10, 30));
 
     // pedidos em aberto (hoje e ontem) — mantêm reservas visíveis no estoque
-    makeOrder(1, 17, { skus: ['VTX-70D'], source: 'site', outcome: 'em_preparacao' });
-    makeOrder(0, Math.max(new Date().getHours() - 3, 0), { skus: ['AMP-60EFB'], source: 'site', outcome: 'confirmado' });
-    makeOrder(0, Math.max(new Date().getHours() - 2, 0), { skus: ['VTX-60D', 'VTX-90D'], source: 'site', outcome: 'pendente' });
-    makeOrder(0, Math.max(new Date().getHours() - 1, 0), { skus: ['AMP-50D'], source: 'balcao', outcome: 'concluido' });
+    makeOrder(1, 17, { skus: ['BOS-70D'], source: 'site', outcome: 'em_preparacao' });
+    makeOrder(0, Math.max(new Date().getHours() - 3, 0), { skus: ['MOU-60EFB'], source: 'site', outcome: 'confirmado' });
+    makeOrder(0, Math.max(new Date().getHours() - 2, 0), { skus: ['HEL-60D', 'MOU-90D'], source: 'site', outcome: 'pendente' });
+    makeOrder(0, Math.max(new Date().getHours() - 1, 0), { skus: ['MOU-50D'], source: 'balcao', outcome: 'concluido' });
+    d.prepare("INSERT INTO settings (key, value) VALUES ('_seed_version', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(JSON.stringify(SEED_VERSION));
     return { orders: created };
   } finally {
     setClock(null);
@@ -335,4 +345,4 @@ function resetDemo(admin) {
   });
 }
 
-module.exports = { seedIfEmpty, resetDemo, ensureAdmin, PRODUCTS, APPLICATIONS, SERVICES, GALLERY, BANNERS };
+module.exports = { seedIfEmpty, resetDemo, ensureAdmin, storedSeedVersion, SEED_VERSION, PRODUCTS, APPLICATIONS, SERVICES, GALLERY, BANNERS };

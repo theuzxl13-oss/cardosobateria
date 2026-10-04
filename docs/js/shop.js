@@ -158,7 +158,7 @@
           <div class="grid3">${vehicleFields()}</div>
           <button class="btn btn-dark btn-block" type="submit">Buscar pelo veículo</button>
           <div class="or">ou busque por capacidade, marca ou código</div>
-          <div class="searchbox"><input name="q" placeholder="Ex.: 60Ah, Voltrix, VTX-60D" aria-label="Buscar bateria" /><button class="btn btn-primary" type="button" id="qbtn">Buscar</button></div>
+          <div class="searchbox"><input name="q" placeholder="Ex.: 60Ah, Moura, Heliar, Bosch" aria-label="Buscar bateria" /><button class="btn btn-primary" type="button" id="qbtn">Buscar</button></div>
         </form>
       </div>
     </section>
@@ -172,7 +172,7 @@
     <section class="section section-alt"><div class="container">
       <div class="section-head"><h2>Baterias em destaque</h2><a class="btn btn-ghost" href="#/catalogo">Ver todas</a></div>
       ${h.featured.length ? `<div class="products-grid">${h.featured.map(productCard).join('')}</div>` : CB.empty('Nenhum produto em destaque.')}
-      <p class="small muted" style="margin-top:14px">Preços e produtos demonstrativos (marcas fictícias).</p>
+      <p class="small muted" style="margin-top:14px">Preços, estoque e garantias demonstrativos. Imagens ilustrativas.</p>
     </div></section>
 
     ${h.promos.length ? `<section class="section"><div class="container"><div class="section-head"><h2>Ofertas</h2><a class="btn btn-ghost" href="#/catalogo?promo=1">Ver ofertas</a></div><div class="products-grid">${h.promos.map(productCard).join('')}</div></div></section>` : ''}
