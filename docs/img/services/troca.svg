@@ -1,0 +1,17 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 400' role='img'>
+  <rect width='600' height='400' fill='#111111'/>
+  
+  <g transform='translate(60 190) scale(1.4)'>
+    <path d='M0 70 q4 -26 30 -30 l40 -34 q10 -6 24 -6 h90 q16 0 26 10 l34 30 q36 4 44 30 v20 h-288z' fill='#d9d9d9'/>
+    <path d='M78 12 h50 v30 h-80z M138 12 h40 q8 0 14 6 l22 24 h-76z' fill='#9fc3d9'/>
+    <circle cx='60' cy='92' r='26' fill='#222'/><circle cx='60' cy='92' r='11' fill='#888'/>
+    <circle cx='230' cy='92' r='26' fill='#222'/><circle cx='230' cy='92' r='11' fill='#888'/>
+  </g>
+  <g transform='translate(390 60) scale(1)'>
+    <rect x='20' y='0' width='22' height='18' rx='3' fill='#c62828'/><rect x='118' y='0' width='22' height='18' rx='3' fill='#555'/>
+    <rect x='0' y='14' width='160' height='110' rx='8' fill='#1b1b1b' stroke='#444' stroke-width='2'/>
+    <rect x='0' y='45' width='160' height='45' fill='#FFC400'/>
+    <path d='M84 52 l-16 22 h12 l-6 14 l18 -24 h-12 z' fill='#111111'/>
+  </g><path d='M380 150 q-40 20 -60 60' stroke='#FFC400' stroke-width='6' fill='none' stroke-dasharray='10 8'/><text x='30' y='60' font-family='Barlow, Arial, Helvetica, sans-serif' font-size='40' font-weight='800' fill='#FFFFFF'>TROCA</text>
+  <text x='584' y='384' font-family='Barlow, Arial, Helvetica, sans-serif' font-size='13' fill='#bbb' text-anchor='end' letter-spacing='1'>IMAGEM ILUSTRATIVA</text>
+</svg>

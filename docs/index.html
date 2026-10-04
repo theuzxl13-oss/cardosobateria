@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Cardoso Baterias — Baterias automotivas</title>
+    <meta name="description" content="Cardoso Baterias: baterias automotivas, teste, troca e instalação. Encontre a bateria ideal para seu carro. (Demonstração comercial)" />
+    <meta name="theme-color" content="#0d0d0d" />
+    <link rel="icon" type="image/png" href="img/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/site.css" />
+    <script src="js/config.js"></script>
+  </head>
+  <body>
+    <a class="sr-only" href="#app">Pular para o conteúdo</a>
+    <div class="demo-bar" role="note">
+      <span class="hide-sm">Demonstração comercial — produtos, preços, aplicações e dados são fictícios. Nenhum valor é cobrado.</span><span class="show-sm">Demonstração · dados fictícios · nada é cobrado</span>
+    </div>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="#/" aria-label="Cardoso Baterias — início"><img id="logo" src="img/logo-on-dark.png" alt="Cardoso Baterias" width="150" height="64" /></a>
+        <nav class="main-nav" id="mainNav" aria-label="Principal">
+          <a href="#/">Início</a>
+          <a href="#/catalogo">Baterias</a>
+          <a href="#/servicos">Serviços</a>
+          <a href="#/sobre">Sobre</a>
+          <a href="#/galeria">Galeria</a>
+          <a href="#/duvidas">Dúvidas</a>
+          <a href="#/contato">Contato</a>
+          <a href="#/consultar-pedido">Consultar pedido</a>
+        </nav>
+        <div class="header-actions">
+          <a class="btn btn-sm btn-outline-light hide-sm hide-md" id="headerWa" target="_blank" rel="noopener" href="https://wa.me/5511962986718">Orçamento</a>
+          <a class="btn btn-sm cart-btn" href="#/carrinho" aria-label="Carrinho">🛒<span class="hide-sm">Carrinho</span><span class="cart-count" id="cartCount">0</span></a>
+          <button class="icon-btn menu-toggle" id="menuToggle" aria-label="Abrir menu" aria-expanded="false" aria-controls="mainNav">☰</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="app" tabindex="-1"><div class="state state-loading"><span class="spinner"></span><span>Carregando a loja…</span></div></main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div>
+            <img id="footerLogo" src="img/logo-on-dark.png" alt="Cardoso Baterias" style="height: 60px; width: auto; margin-bottom: 12px" />
+            <p class="small" id="footerAbout">Baterias automotivas, teste, troca e instalação.</p>
+            <span class="demo-flag">Conteúdo demonstrativo</span>
+          </div>
+          <div>
+            <h4>Navegação</h4>
+            <ul>
+              <li><a href="#/catalogo">Baterias</a></li>
+              <li><a href="#/servicos">Serviços</a></li>
+              <li><a href="#/sobre">Sobre</a></li>
+              <li><a href="#/galeria">Galeria</a></li>
+              <li><a href="#/duvidas">Perguntas frequentes</a></li>
+              <li><a href="#/consultar-pedido">Consultar pedido</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Atendimento</h4>
+            <ul id="footerContact"></ul>
+          </div>
+          <div>
+            <h4>Horários</h4>
+            <p class="small" id="footerHours"></p>
+            <div id="footerSocial" class="small"></div>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span id="footerNote">© Cardoso Baterias</span>
+          <a href="admin/">Área administrativa</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Botões flutuantes (posições separadas para não sobrepor) -->
+    <button class="fab fab-chat" id="chatFab" aria-label="Abrir assistente virtual" aria-expanded="false" aria-controls="chatPanel">
+      <span class="fab-label">Tire suas dúvidas</span>
+      <svg viewBox="0 0 24 24" fill="#FFC400" aria-hidden="true"><path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm3 6.5a1.5 1.5 0 1 0 0 .01zm5 0a1.5 1.5 0 1 0 0 .01zm5 0a1.5 1.5 0 1 0 0 .01z"/></svg>
+    </button>
+    <a class="fab fab-wa" id="waFab" href="https://wa.me/5511962986718" target="_blank" rel="noopener" aria-label="Falar no WhatsApp">
+      <span class="fab-label">Fale no WhatsApp</span>
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#fff" d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.2.6 4.4 1.7 6.3L3 29l7.3-1.9c1.8 1 3.8 1.5 5.8 1.5 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.7-.5-5.3-1.4l-.4-.2-4.3 1.1 1.2-4.2-.3-.4a10.4 10.4 0 0 1-1.6-5.5C5.3 9.8 10.1 5.1 16 5.1s10.7 4.7 10.7 10.5S21.9 26.1 16 26.1zm5.9-7.9c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.4-.5-2.6-1.6-1-.9-1.6-1.9-1.8-2.2-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.3.3-.5.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.1 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg>
+    </a>
+    <section class="chat-panel" id="chatPanel" aria-label="Assistente virtual Cardoso Baterias"></section>
+
+    <script src="js/common.js"></script>
+    <script src="js/shop.js"></script>
+    <script src="js/chatbot.js"></script>
+  </body>
+</html>

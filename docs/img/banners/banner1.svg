@@ -1,0 +1,14 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 500' preserveAspectRatio='xMidYMid slice' role='img'>
+  <defs><linearGradient id='g' x1='0' x2='1'><stop offset='0' stop-color='#0b0b0b'/><stop offset='.55' stop-color='#161616'/><stop offset='1' stop-color='#262626'/></linearGradient></defs>
+  <rect width='1200' height='500' fill='url(#g)'/>
+  <path d='M760 0 h440 v500 h-640z' fill='#FFC400' opacity='.08'/>
+  <path d='M900 0 h300 v500 h-460z' fill='#FFC400' opacity='.10'/>
+  
+  <g transform='translate(760 120) scale(2.1)'>
+    <rect x='20' y='0' width='22' height='18' rx='3' fill='#c62828'/><rect x='118' y='0' width='22' height='18' rx='3' fill='#555'/>
+    <rect x='0' y='14' width='160' height='110' rx='8' fill='#1b1b1b' stroke='#444' stroke-width='2'/>
+    <rect x='0' y='45' width='160' height='45' fill='#FFC400'/>
+    <path d='M84 52 l-16 22 h12 l-6 14 l18 -24 h-12 z' fill='#111111'/>
+  </g><path d='M1110 90 l-40 70 h30 l-20 50 l60 -80 h-32 l22 -40z' fill='#FFC400'/>
+  <text x='1184' y='486' font-family='Barlow, Arial, Helvetica, sans-serif' font-size='13' fill='#777' text-anchor='end' letter-spacing='1'>IMAGEM ILUSTRATIVA</text>
+</svg>

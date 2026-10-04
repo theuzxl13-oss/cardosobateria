@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Testes (regras de estoque, API, chatbot)
+        run: npm test
+      - name: Bundle do navegador está atualizado
+        run: |
+          npm run build
+          git diff --exit-code -- docs/js/core.bundle.js || (echo "Execute 'npm run build' e faça commit de docs/js/core.bundle.js" && exit 1)

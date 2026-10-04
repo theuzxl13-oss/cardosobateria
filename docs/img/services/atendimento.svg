@@ -1,0 +1,13 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 400' role='img'>
+  <rect width='600' height='400' fill='#111111'/>
+  
+  <g transform='translate(200 200) scale(1.3)'>
+    <circle cx='0' cy='0' r='28' fill='#e0b48a'/><path d='M-28 -6 q28 -40 56 0 q-4 -24 -28 -26 q-24 2 -28 26z' fill='#2b2b2b'/>
+    <path d='M-50 110 q0 -70 50 -72 q50 2 50 72z' fill='#FFC400'/>
+  </g>
+  <g transform='translate(400 210) scale(1.2)'>
+    <circle cx='0' cy='0' r='28' fill='#e0b48a'/><path d='M-28 -6 q28 -40 56 0 q-4 -24 -28 -26 q-24 2 -28 26z' fill='#2b2b2b'/>
+    <path d='M-50 110 q0 -70 50 -72 q50 2 50 72z' fill='#FFFFFF'/>
+  </g><rect x='250' y='70' width='120' height='60' rx='14' fill='#FFC400'/><path d='M290 130 l-10 22 l30 -22z' fill='#FFC400'/><text x='310' y='110' font-family='Barlow, Arial, Helvetica, sans-serif' font-size='30' font-weight='800' fill='#111111' text-anchor='middle'>Ah?</text><text x='30' y='60' font-family='Barlow, Arial, Helvetica, sans-serif' font-size='40' font-weight='800' fill='#FFFFFF'>ATENDIMENTO</text>
+  <text x='584' y='384' font-family='Barlow, Arial, Helvetica, sans-serif' font-size='13' fill='#bbb' text-anchor='end' letter-spacing='1'>IMAGEM ILUSTRATIVA</text>
+</svg>

@@ -1,0 +1,77 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600' role='img'>
+  <rect width='800' height='600' fill='#d8d8d8'/>
+  <rect x='60' y='150' width='680' height='12' fill='#FFC400'/>
+  <g transform='translate(80 40) scale(0.8)'>
+    <rect x='20' y='0' width='22' height='18' rx='3' fill='#c62828'/><rect x='118' y='0' width='22' height='18' rx='3' fill='#555'/>
+    <rect x='0' y='14' width='160' height='110' rx='8' fill='#1b1b1b' stroke='#444' stroke-width='2'/>
+    <rect x='0' y='45' width='160' height='45' fill='#FFC400'/>
+    <path d='M84 52 l-16 22 h12 l-6 14 l18 -24 h-12 z' fill='#111111'/>
+  </g>
+  <g transform='translate(245 40) scale(0.8)'>
+    <rect x='20' y='0' width='22' height='18' rx='3' fill='#c62828'/><rect x='118' y='0' width='22' height='18' rx='3' fill='#555'/>
+    <rect x='0' y='14' width='160' height='110' rx='8' fill='#1b1b1b' stroke='#444' stroke-width='2'/>
+    <rect x='0' y='45' width='160' height='45' fill='#FFFFFF'/>
+    <path d='M84 52 l-16 22 h12 l-6 14 l18 -24 h-12 z' fill='#111111'/>
+  </g>
+  <g transform='translate(410 40) scale(0.8)'>
+    <rect x='20' y='0' width='22' height='18' rx='3' fill='#c62828'/><rect x='118' y='0' width='22' height='18' rx='3' fill='#555'/>
+    <rect x='0' y='14' width='160' height='110' rx='8' fill='#1b1b1b' stroke='#444' stroke-width='2'/>
+    <rect x='0' y='45' width='160' height='45' fill='#FFC400'/>
+    <path d='M84 52 l-16 22 h12 l-6 14 l18 -24 h-12 z' fill='#111111'/>
+  </g>
+  <g transform='translate(575 40) scale(0.8)'>
+    <rect x='20' y='0' width='22' height='18' rx='3' fill='#c62828'/><rect x='118' y='0' width='22' height='18' rx='3' fill='#555'/>
+    <rect x='0' y='14' width='160' height='110' rx='8' fill='#1b1b1b' stroke='#444' stroke-width='2'/>
+    <rect x='0' y='45' width='160' height='45' fill='#FFFFFF'/>
+    <path d='M84 52 l-16 22 h12 l-6 14 l18 -24 h-12 z' fill='#111111'/>
+  </g><rect x='60' y='290' width='680' height='12' fill='#FFC400'/>
+  <g transform='translate(80 180) scale(0.8)'>
+    <rect x='20' y='0' width='22' height='18' rx='3' fill='#c62828'/><rect x='118' y='0' width='22' height='18' rx='3' fill='#555'/>
+    <rect x='0' y='14' width='160' height='110' rx='8' fill='#1b1b1b' stroke='#444' stroke-width='2'/>
+    <rect x='0' y='45' width='160' height='45' fill='#FFC400'/>
+    <path d='M84 52 l-16 22 h12 l-6 14 l18 -24 h-12 z' fill='#111111'/>
+  </g>
+  <g transform='translate(245 180) scale(0.8)'>
+    <rect x='20' y='0' width='22' height='18' rx='3' fill='#c62828'/><rect x='118' y='0' width='22' height='18' rx='3' fill='#555'/>
+    <rect x='0' y='14' width='160' height='110' rx='8' fill='#1b1b1b' stroke='#444' stroke-width='2'/>
+    <rect x='0' y='45' width='160' height='45' fill='#FFFFFF'/>
+    <path d='M84 52 l-16 22 h12 l-6 14 l18 -24 h-12 z' fill='#111111'/>
+  </g>
+  <g transform='translate(410 180) scale(0.8)'>
+    <rect x='20' y='0' width='22' height='18' rx='3' fill='#c62828'/><rect x='118' y='0' width='22' height='18' rx='3' fill='#555'/>
+    <rect x='0' y='14' width='160' height='110' rx='8' fill='#1b1b1b' stroke='#444' stroke-width='2'/>
+    <rect x='0' y='45' width='160' height='45' fill='#FFC400'/>
+    <path d='M84 52 l-16 22 h12 l-6 14 l18 -24 h-12 z' fill='#111111'/>
+  </g>
+  <g transform='translate(575 180) scale(0.8)'>
+    <rect x='20' y='0' width='22' height='18' rx='3' fill='#c62828'/><rect x='118' y='0' width='22' height='18' rx='3' fill='#555'/>
+    <rect x='0' y='14' width='160' height='110' rx='8' fill='#1b1b1b' stroke='#444' stroke-width='2'/>
+    <rect x='0' y='45' width='160' height='45' fill='#FFFFFF'/>
+    <path d='M84 52 l-16 22 h12 l-6 14 l18 -24 h-12 z' fill='#111111'/>
+  </g><rect x='60' y='430' width='680' height='12' fill='#FFC400'/>
+  <g transform='translate(80 320) scale(0.8)'>
+    <rect x='20' y='0' width='22' height='18' rx='3' fill='#c62828'/><rect x='118' y='0' width='22' height='18' rx='3' fill='#555'/>
+    <rect x='0' y='14' width='160' height='110' rx='8' fill='#1b1b1b' stroke='#444' stroke-width='2'/>
+    <rect x='0' y='45' width='160' height='45' fill='#FFC400'/>
+    <path d='M84 52 l-16 22 h12 l-6 14 l18 -24 h-12 z' fill='#111111'/>
+  </g>
+  <g transform='translate(245 320) scale(0.8)'>
+    <rect x='20' y='0' width='22' height='18' rx='3' fill='#c62828'/><rect x='118' y='0' width='22' height='18' rx='3' fill='#555'/>
+    <rect x='0' y='14' width='160' height='110' rx='8' fill='#1b1b1b' stroke='#444' stroke-width='2'/>
+    <rect x='0' y='45' width='160' height='45' fill='#FFFFFF'/>
+    <path d='M84 52 l-16 22 h12 l-6 14 l18 -24 h-12 z' fill='#111111'/>
+  </g>
+  <g transform='translate(410 320) scale(0.8)'>
+    <rect x='20' y='0' width='22' height='18' rx='3' fill='#c62828'/><rect x='118' y='0' width='22' height='18' rx='3' fill='#555'/>
+    <rect x='0' y='14' width='160' height='110' rx='8' fill='#1b1b1b' stroke='#444' stroke-width='2'/>
+    <rect x='0' y='45' width='160' height='45' fill='#FFC400'/>
+    <path d='M84 52 l-16 22 h12 l-6 14 l18 -24 h-12 z' fill='#111111'/>
+  </g>
+  <g transform='translate(575 320) scale(0.8)'>
+    <rect x='20' y='0' width='22' height='18' rx='3' fill='#c62828'/><rect x='118' y='0' width='22' height='18' rx='3' fill='#555'/>
+    <rect x='0' y='14' width='160' height='110' rx='8' fill='#1b1b1b' stroke='#444' stroke-width='2'/>
+    <rect x='0' y='45' width='160' height='45' fill='#FFFFFF'/>
+    <path d='M84 52 l-16 22 h12 l-6 14 l18 -24 h-12 z' fill='#111111'/>
+  </g>
+  <text x='784' y='584' font-family='Barlow, Arial, Helvetica, sans-serif' font-size='13' fill='#bbb' text-anchor='end' letter-spacing='1'>IMAGEM ILUSTRATIVA</text>
+</svg>
