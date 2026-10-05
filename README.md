@@ -111,6 +111,8 @@ O banco fica em `data/cardoso.db`, é criado e migrado automaticamente e recebe 
 
 ### Site institucional
 
+- **Nossas lojas:** as três unidades (Embu-Guaçu, Cipó e Jardim Ângela) com nota e número de avaliações do Google (consultados em 05/10/2026), trecho de avaliação, telefone, horário e botões de WhatsApp, Ligar e Como chegar (Google Maps). Os dados que não estavam visíveis (endereços completos, demais horários, telefone do Cipó) aparecem como “a confirmar” e são editados em **Painel → Lojas / unidades**.
+
 - Página inicial com destaque para “Encontre a bateria ideal para seu carro”, consulta por veículo, busca, banners, produtos em destaque, ofertas, serviços, “Sobre” e perguntas frequentes.
 - Páginas de serviços (troca, instalação, teste, atendimento), sobre, galeria (loja e serviços realizados, com ampliação da imagem), perguntas frequentes e contato.
 - Endereço, horários, área de atendimento, redes sociais, textos, banners, serviços, galeria, FAQ e logo são **editáveis no painel**.
@@ -137,6 +139,10 @@ O banco fica em `data/cardoso.db`, é criado e migrado automaticamente e recebe 
 - A situação do pagamento (pendente, aprovado, recusado, estornado) é **separada** do status do pedido.
 
 ### Estoque integrado (regras em `core/services/inventory.js` e `orders.js`)
+
+- **Estoque por loja:** cada produto tem físico, reservado e disponível **em cada unidade** (Embu-Guaçu, Cipó e Jardim Ângela). O total do produto é a soma das lojas.
+- **Painel → Estoque:** posição produto × loja, resumo por loja e movimentação com loja obrigatória: entrada, saída, ajuste de inventário (por loja) e **transferência entre lojas**. A transferência gera uma saída na origem e uma entrada no destino.
+- Cada pedido usa o estoque de **uma** loja. Na retirada, é a loja escolhida pelo cliente; o checkout bloqueia as lojas que não têm todos os itens. Na entrega, o sistema escolhe a primeira loja que tem tudo. Na venda de balcão, o vendedor escolhe a loja.
 
 - O **disponível** é o físico menos as reservas, e é esse valor que aparece no catálogo.
 - Não é possível pedir acima do disponível. Itens repetidos no carrinho são somados antes da validação.

@@ -121,6 +121,13 @@ function dashboard(params = {}) {
       low: stock.low,
       out: stock.out,
     },
+    stock_by_store: d
+      .prepare(`SELECT s.id, s.name, s.neighborhood, COALESCE(SUM(ss.stock_qty),0) AS units, COALESCE(SUM(ss.reserved_qty),0) AS reserved,
+          COALESCE(SUM(ss.stock_qty * p.cost_cents),0) AS value_cost_cents,
+          SUM(CASE WHEN p.active = 1 AND ss.stock_qty - ss.reserved_qty <= 0 THEN 1 ELSE 0 END) AS zero_items
+        FROM stores s LEFT JOIN store_stock ss ON ss.store_id = s.id LEFT JOIN products p ON p.id = ss.product_id
+        WHERE s.active = 1 GROUP BY s.id ORDER BY s.sort, s.id`)
+      .all(),
     top_products: top,
     series: [...seriesMap.values()],
     recent_movements: d
@@ -229,6 +236,9 @@ function ordersReport(params = {}) {
 }
 
 function stockReport() {
+  const stores = get().prepare('SELECT id, name, neighborhood FROM stores ORDER BY sort, id').all();
+  const perStore = new Map(get().prepare('SELECT product_id, store_id, stock_qty - reserved_qty AS avail FROM store_stock').all().map((r) => [`${r.product_id}:${r.store_id}`, r.avail]));
+  const storeLabel = (st) => `Disp. ${st.neighborhood || st.name}`;
   const rows = get()
     .prepare(`SELECT p.*, b.name AS brand FROM products p LEFT JOIN brands b ON b.id = p.brand_id ORDER BY p.active DESC, p.name`)
     .all()
@@ -244,6 +254,7 @@ function stockReport() {
         available_qty: avail,
         min_stock: p.min_stock,
         situation: avail <= 0 ? 'Esgotado' : avail <= p.min_stock ? 'Baixo' : 'OK',
+        ...Object.fromEntries(stores.map((st) => [`store_${st.id}`, perStore.get(`${p.id}:${st.id}`) || 0])),
         cost_cents: p.cost_cents,
         price_cents: p.price_cents,
         value_cost_cents: p.stock_qty * p.cost_cents,
@@ -260,6 +271,7 @@ function stockReport() {
       { key: 'stock_qty', label: 'Físico', type: 'int' },
       { key: 'reserved_qty', label: 'Reservado', type: 'int' },
       { key: 'available_qty', label: 'Disponível', type: 'int' },
+      ...stores.map((st) => ({ key: `store_${st.id}`, label: storeLabel(st), type: 'int' })),
       { key: 'min_stock', label: 'Mínimo', type: 'int' },
       { key: 'situation', label: 'Situação' },
       { key: 'cost_cents', label: 'Custo un.', type: 'money' },
@@ -272,6 +284,7 @@ function stockReport() {
       { label: 'Unidades em estoque', value: rows.reduce((a, r) => a + r.stock_qty, 0) },
       { label: 'Unidades reservadas', value: rows.reduce((a, r) => a + r.reserved_qty, 0) },
       { label: 'Valor do estoque (custo)', value: rows.reduce((a, r) => a + r.value_cost_cents, 0), type: 'money' },
+      ...stores.map((st) => ({ label: `Disponível — ${st.name}`, value: rows.reduce((a, r) => a + Math.max(r[`store_${st.id}`], 0), 0) })),
     ],
   };
 }
@@ -287,6 +300,7 @@ function movementsReport(params = {}) {
       created_at: m.created_at,
       sku: m.product_sku,
       product: m.product_name,
+      store: m.store_name || '',
       type: MOVEMENT_LABELS[m.type],
       quantity: m.quantity,
       stock_delta: m.stock_delta,
@@ -302,11 +316,12 @@ function movementsReport(params = {}) {
       { key: 'created_at', label: 'Data', type: 'datetime' },
       { key: 'sku', label: 'SKU' },
       { key: 'product', label: 'Produto' },
+      { key: 'store', label: 'Loja' },
       { key: 'type', label: 'Tipo' },
       { key: 'quantity', label: 'Qtd.', type: 'int' },
       { key: 'stock_delta', label: 'Var. físico', type: 'int' },
       { key: 'reserved_delta', label: 'Var. reserva', type: 'int' },
-      { key: 'stock_after', label: 'Físico após', type: 'int' },
+      { key: 'stock_after', label: 'Físico após (loja)', type: 'int' },
       { key: 'reason', label: 'Motivo' },
       { key: 'user', label: 'Responsável' },
     ],

@@ -459,3 +459,7 @@ table.table {
   border-radius: 6px;
   padding: 3px 8px;
 }
+
+[hidden] {
+  display: none !important;
+}

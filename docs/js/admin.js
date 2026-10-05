@@ -57,7 +57,7 @@
     ['Visão geral', [['#/', '📊', 'Dashboard']]],
     ['Vendas', [['#/pedidos', '🧾', 'Pedidos'], ['#/venda', '➕', 'Nova venda (balcão)'], ['#/clientes', '👥', 'Clientes']]],
     ['Catálogo e estoque', [['#/produtos', '🔋', 'Produtos'], ['#/estoque', '📦', 'Estoque'], ['#/marcas', '🏷️', 'Marcas'], ['#/categorias', '🗂️', 'Categorias'], ['#/fornecedores', '🚚', 'Fornecedores']]],
-    ['Site', [['#/conteudo', '📝', 'Textos institucionais'], ['#/banners', '🖼️', 'Banners'], ['#/servicos', '🔧', 'Serviços'], ['#/galeria', '📷', 'Galeria'], ['#/faq', '❓', 'Perguntas frequentes']]],
+    ['Site', [['#/lojas', '🏪', 'Lojas / unidades'], ['#/conteudo', '📝', 'Textos institucionais'], ['#/banners', '🖼️', 'Banners'], ['#/servicos', '🔧', 'Serviços'], ['#/galeria', '📷', 'Galeria'], ['#/faq', '❓', 'Perguntas frequentes']]],
     ['Gestão', [['#/relatorios', '📈', 'Relatórios'], ['#/configuracoes', '⚙️', 'Configurações'], ['#/demo', '🧪', 'Demonstração']]],
   ];
 
@@ -193,6 +193,9 @@
         <div class="card"><h2>Mais vendidos no período</h2>${d.top_products.length ? `<div class="table-wrap"><table class="table"><thead><tr><th>Produto</th><th class="num">Qtd.</th><th class="num">Total</th></tr></thead><tbody>${d.top_products.map((t) => `<tr><td>${esc(t.name)}<br><span class="small muted">${esc(t.sku)}</span></td><td class="num">${t.quantity}</td><td class="num">${brl(t.total_cents)}</td></tr>`).join('')}</tbody></table></div>` : CB.empty('Nenhuma venda concluída no período.')}</div>
       </div>
       <div class="grid-2">
+        <div class="card"><div class="card-head"><h2>Estoque por loja</h2><a class="btn btn-ghost btn-sm" href="#/estoque">Ver posição</a></div>
+          ${(d.stock_by_store || []).length ? `<div class="table-wrap"><table class="table"><thead><tr><th>Loja</th><th class="num">Físico</th><th class="num">Reservado</th><th class="num">Valor (custo)</th><th class="num">Itens zerados</th></tr></thead><tbody>${d.stock_by_store.map((st) => `<tr><td>${esc(st.name)}</td><td class="num">${st.units}</td><td class="num">${st.reserved}</td><td class="num">${brl(st.value_cost_cents)}</td><td class="num">${st.zero_items || 0}</td></tr>`).join('')}</tbody></table></div>` : CB.empty('Nenhuma loja cadastrada.')}
+        </div>
         <div class="card"><div class="card-head"><h2>Estoque baixo e esgotados</h2><a class="btn btn-ghost btn-sm" href="#/estoque">Registrar entrada</a></div>
           ${d.stock.low.length + d.stock.out.length ? `<div class="table-wrap"><table class="table"><thead><tr><th>Produto</th><th class="num">Físico</th><th class="num">Reservado</th><th class="num">Disponível</th><th class="num">Mínimo</th></tr></thead><tbody>${[...d.stock.out, ...d.stock.low]
             .map((p) => `<tr><td><a href="#/produtos/${p.id}">${esc(p.name)}</a> ${p.available_qty <= 0 ? '<span class="badge badge-danger">Esgotado</span>' : '<span class="badge badge-warn">Baixo</span>'}</td><td class="num">${p.stock_qty}</td><td class="num">${p.reserved_qty}</td><td class="num"><strong>${p.available_qty}</strong></td><td class="num">${p.min_stock}</td></tr>`)
@@ -225,9 +228,9 @@
 
   function movTable(list, compact = false) {
     if (!list.length) return CB.empty('Nenhuma movimentação.');
-    return `<div class="table-wrap"><table class="table"><thead><tr><th>Data</th><th>Produto</th><th>Tipo</th><th class="num">Qtd.</th><th class="num">Δ Físico</th><th class="num">Δ Reserva</th>${compact ? '' : '<th class="num">Físico após</th><th>Motivo</th>'}<th>Responsável</th></tr></thead><tbody>${list
+    return `<div class="table-wrap"><table class="table"><thead><tr><th>Data</th><th>Produto</th><th>Loja</th><th>Tipo</th><th class="num">Qtd.</th><th class="num">Δ Físico</th><th class="num">Δ Reserva</th>${compact ? '' : '<th class="num">Físico após (loja)</th><th>Motivo</th>'}<th>Responsável</th></tr></thead><tbody>${list
       .map(
-        (m) => `<tr><td class="nowrap">${CB.dt(m.created_at)}</td><td>${esc(m.product_name)}<br><span class="small muted">${esc(m.product_sku)}</span></td><td><span class="badge">${esc(CB.MOV[m.type] || m.type)}</span>${m.order_code ? `<br><span class="small">${esc(m.order_code)}</span>` : ''}</td><td class="num">${m.quantity}</td><td class="num">${signed(m.stock_delta)}</td><td class="num">${signed(m.reserved_delta)}</td>${compact ? '' : `<td class="num">${m.stock_after}</td><td class="small">${esc(m.reason)}${m.supplier_name ? `<br><span class="muted">Fornecedor: ${esc(m.supplier_name)}</span>` : ''}</td>`}<td class="small">${esc(m.user_name)}</td></tr>`
+        (m) => `<tr><td class="nowrap">${CB.dt(m.created_at)}</td><td>${esc(m.product_name)}<br><span class="small muted">${esc(m.product_sku)}</span></td><td class="small">${esc((m.store_name || '').replace(/^Cardoso Baterias\s*/, ''))}</td><td><span class="badge">${esc(CB.MOV[m.type] || m.type)}</span>${m.order_code ? `<br><span class="small">${esc(m.order_code)}</span>` : ''}</td><td class="num">${m.quantity}</td><td class="num">${signed(m.stock_delta)}</td><td class="num">${signed(m.reserved_delta)}</td>${compact ? '' : `<td class="num">${m.stock_after}</td><td class="small">${esc(m.reason)}${m.supplier_name ? `<br><span class="muted">Fornecedor: ${esc(m.supplier_name)}</span>` : ''}</td>`}<td class="small">${esc(m.user_name)}</td></tr>`
       )
       .join('')}</tbody></table></div>`;
   }
@@ -284,7 +287,8 @@
             <dt>Estoque</dt><dd>${{ reservado: '<span class="badge badge-warn">Reservado</span>', baixado: '<span class="badge badge-ok">Baixado</span>', liberado: '<span class="badge">Reserva liberada</span>', devolvido: '<span class="badge">Devolvido</span>' }[o.stock_state]}</dd>
             <dt>Cliente</dt><dd>${esc(o.customer_name)}<br>${esc(o.customer_phone)} ${o.customer_email ? `· ${esc(o.customer_email)}` : ''}</dd>
             ${o.vehicle_info ? `<dt>Veículo</dt><dd>${esc(o.vehicle_info)}</dd>` : ''}
-            <dt>Recebimento</dt><dd>${o.fulfillment === 'entrega' ? `Entrega<br>${esc(addr)}` : 'Retirada na loja'}</dd>
+            <dt>Recebimento</dt><dd>${o.fulfillment === 'entrega' ? `Entrega<br>${esc(addr)}` : `Retirada${o.pickup_store_name ? ` — ${esc(o.pickup_store_name)}` : ' na loja'}`}</dd>
+            <dt>Estoque da loja</dt><dd>${esc(o.stock_store_name || '—')}</dd>
             <dt>Pagamento</dt><dd>${esc(CB.PAY_METHOD[o.payment_method] || o.payment_method)}</dd>
             ${o.notes ? `<dt>Observações</dt><dd>${CB.nl2br(o.notes)}</dd>` : ''}
           </dl>
@@ -359,10 +363,18 @@
   async function pageSale() {
     setTitle('Nova venda (balcão)');
     CB.loading(content);
-    const [products, customers] = await Promise.all([CB.get('/api/admin/products', { status: 'ativos' }), CB.get('/api/admin/r/customers')]);
+    const [products, customers, matrix] = await Promise.all([CB.get('/api/admin/products', { status: 'ativos' }), CB.get('/api/admin/r/customers'), CB.get('/api/admin/stock/matrix')]);
+    const stores = matrix.stores.filter((st) => st.active);
+    const availAt = (pid, sid) => {
+      const p = matrix.products.find((x) => x.id === pid);
+      const b = p && p.by_store.find((x) => x.store_id === Number(sid));
+      return b ? b.available_qty : 0;
+    };
     const lines = [];
     content.innerHTML = `<form id="sale" novalidate><div class="grid-2">
-      <div class="card"><h2>Cliente</h2>
+      <div class="card"><h2>Loja</h2>
+        <label><span class="lbl">Loja da venda (estoque) *</span><select name="storeId" id="saleStore">${stores.map((st) => `<option value="${st.id}">${esc(st.name)}</option>`).join('')}</select></label>
+        <h2 style="margin-top:18px">Cliente</h2>
         <div class="form-grid">
           <label class="full"><span class="lbl">Cliente cadastrado</span><select name="customerId"><option value="">— Novo cliente / avulso —</option>${customers.map((c) => `<option value="${c.id}">${esc(c.name)} · ${esc(c.phone)}</option>`).join('')}</select></label>
           <label><span class="lbl">Nome *</span><input name="name" maxlength="120" data-msg="Informe o nome."/></label>
@@ -378,7 +390,7 @@
         </div>
       </div>
       <div class="card"><h2>Itens</h2>
-        <div class="toolbar"><label style="flex:1"><span class="lbl">Produto</span><select id="pSel"><option value="">Selecione…</option>${products.map((p) => `<option value="${p.id}" ${p.available_qty <= 0 ? 'disabled' : ''}>${esc(p.name)} — ${brl(p.final_price_cents)} — disp. ${p.available_qty}</option>`).join('')}</select></label>
+        <div class="toolbar"><label style="flex:1"><span class="lbl">Produto</span><select id="pSel"><option value="">Selecione…</option>${products.map((p) => `<option value="${p.id}">${esc(p.name)} — ${brl(p.final_price_cents)}</option>`).join('')}</select></label>
           <label style="width:90px;min-width:0"><span class="lbl">Qtd.</span><input id="pQty" type="number" min="1" value="1"/></label><button type="button" class="btn btn-dark btn-sm" id="pAdd">Adicionar</button></div>
         <div id="lines"></div>
         <button class="btn btn-primary btn-block" style="margin-top:14px" type="submit">Registrar venda</button>
@@ -396,11 +408,12 @@
       if (!lines.length) return (box.innerHTML = CB.empty('Adicione produtos à venda.'));
       const total = lines.reduce((a, l) => a + l.p.final_price_cents * l.qty, 0);
       box.innerHTML = `<div class="table-wrap"><table class="table sale-lines"><thead><tr><th>Produto</th><th class="num">Qtd.</th><th class="num">Total</th><th></th></tr></thead><tbody>${lines
-        .map((l, i) => `<tr><td>${esc(l.p.name)}<br><span class="small muted">${brl(l.p.final_price_cents)} un. · disp. ${l.p.available_qty}</span></td><td class="num">${l.qty}</td><td class="num">${brl(l.p.final_price_cents * l.qty)}</td><td><button type="button" class="btn btn-ghost btn-sm" data-rm="${i}">Remover</button></td></tr>`)
+        .map((l, i) => `<tr><td>${esc(l.p.name)}<br><span class="small muted">${brl(l.p.final_price_cents)} un. · disp. na loja ${availAt(l.p.id, document.getElementById('saleStore').value)}</span></td><td class="num">${l.qty}</td><td class="num">${brl(l.p.final_price_cents * l.qty)}</td><td><button type="button" class="btn btn-ghost btn-sm" data-rm="${i}">Remover</button></td></tr>`)
         .join('')}<tr><td colspan="2" class="num"><strong>Subtotal</strong></td><td class="num"><strong>${brl(total)}</strong></td><td></td></tr></tbody></table></div>`;
       box.querySelectorAll('[data-rm]').forEach((b) => (b.onclick = () => (lines.splice(Number(b.dataset.rm), 1), renderLines())));
     };
     renderLines();
+    document.getElementById('saleStore').onchange = renderLines;
     document.getElementById('pAdd').onclick = () => {
       const p = products.find((x) => String(x.id) === document.getElementById('pSel').value);
       const qty = Math.floor(Number(document.getElementById('pQty').value));
@@ -408,7 +421,8 @@
       if (!(qty >= 1)) return CB.toast('Quantidade inválida.', 'error');
       const ex = lines.find((l) => l.p.id === p.id);
       const nq = (ex ? ex.qty : 0) + qty;
-      if (nq > p.available_qty) return CB.toast(`Disponível: ${p.available_qty} unidade(s).`, 'error');
+      const av = availAt(p.id, document.getElementById('saleStore').value);
+      if (nq > av) return CB.toast(`Disponível nesta loja: ${av} unidade(s).`, 'error');
       if (ex) ex.qty = nq;
       else lines.push({ p, qty });
       renderLines();
@@ -431,6 +445,7 @@
       try {
         const o = await guard(() =>
           CB.post('/api/admin/sales', {
+            storeId: Number(d.storeId),
             customerId: d.customerId || null,
             name: c ? c.name : d.name,
             phone: c ? c.phone : d.phone,
@@ -505,11 +520,14 @@
     const isNew = id === 'novo';
     setTitle(isNew ? 'Novo produto' : 'Editar produto');
     CB.loading(content);
-    const [brands, cats, p] = await Promise.all([CB.get('/api/admin/r/brands'), CB.get('/api/admin/r/categories'), isNew ? null : CB.get(`/api/admin/products/${id}`)]);
+    const [brands, cats, p, stores] = await Promise.all([CB.get('/api/admin/r/brands'), CB.get('/api/admin/r/categories'), isNew ? null : CB.get(`/api/admin/products/${id}`), CB.get('/api/admin/r/stores')]);
     const v = p || { voltage: 12, warranty_months: 12, min_stock: 2, active: 1, featured: 0 };
     let image = v.image || '';
     content.innerHTML = `<p><a href="#/produtos">← Produtos</a></p>
-      ${p ? `<div class="kpis"><div class="kpi"><div class="k-label">Físico</div><div class="k-value">${p.stock_qty}</div></div><div class="kpi k-warn"><div class="k-label">Reservado</div><div class="k-value">${p.reserved_qty}</div></div><div class="kpi k-ok"><div class="k-label">Disponível</div><div class="k-value">${p.available_qty}</div><div class="k-sub">${stockBadge(p)} mínimo ${p.min_stock}</div></div><div class="kpi k-dark"><div class="k-label">Ações de estoque</div><a class="btn btn-dark btn-sm" style="margin-top:8px" href="#/estoque?productId=${p.id}">Entrada / saída / ajuste</a></div></div>` : ''}
+      ${p ? `<div class="kpis"><div class="kpi"><div class="k-label">Físico</div><div class="k-value">${p.stock_qty}</div></div><div class="kpi k-warn"><div class="k-label">Reservado</div><div class="k-value">${p.reserved_qty}</div></div><div class="kpi k-ok"><div class="k-label">Disponível</div><div class="k-value">${p.available_qty}</div><div class="k-sub">${stockBadge(p)} mínimo ${p.min_stock}</div></div><div class="kpi k-dark"><div class="k-label">Ações de estoque</div><a class="btn btn-dark btn-sm" style="margin-top:8px" href="#/estoque?productId=${p.id}">Entrada / saída / ajuste / transferência</a></div></div>
+        <div class="card"><h2>Estoque por loja</h2><div class="table-wrap"><table class="table"><thead><tr><th>Loja</th><th class="num">Físico</th><th class="num">Reservado</th><th class="num">Disponível</th><th></th></tr></thead><tbody>${p.by_store
+          .map((b) => `<tr><td>${esc(b.name)}</td><td class="num">${b.stock_qty}</td><td class="num">${b.reserved_qty}</td><td class="num"><strong>${b.available_qty}</strong></td><td><a class="btn btn-ghost btn-sm" href="#/estoque?productId=${p.id}&storeId=${b.store_id}">Movimentar</a></td></tr>`)
+          .join('')}</tbody></table></div></div>` : ''}
       <form class="card" id="prodForm" novalidate>
         <div class="card-head"><h2>Dados do produto</h2>${p && p.is_demo ? '<span class="demo-flag">Produto demonstrativo</span>' : ''}</div>
         <div class="form-grid">
@@ -528,7 +546,7 @@
           <label><span class="lbl">Preço de venda (R$) *</span><input name="price_cents" required inputmode="decimal" placeholder="0,00" value="${esc(CB.money(v.price_cents))}"/></label>
           <label><span class="lbl">Preço promocional (R$)</span><input name="promo_price_cents" inputmode="decimal" placeholder="vazio = sem promoção" value="${esc(CB.money(v.promo_price_cents))}"/></label>
           <label><span class="lbl">Custo (R$) *</span><input name="cost_cents" required inputmode="decimal" placeholder="0,00" value="${esc(CB.money(v.cost_cents))}"/></label>
-          ${isNew ? '<label><span class="lbl">Estoque inicial</span><input name="initial_stock" type="number" min="0" value="0"/><span class="hint">Gera uma movimentação de entrada.</span></label>' : '<div></div>'}
+          ${isNew ? `<label><span class="lbl">Estoque inicial</span><input name="initial_stock" type="number" min="0" value="0"/><span class="hint">Gera uma movimentação de entrada.</span></label><label><span class="lbl">Loja do estoque inicial</span><select name="initial_store_id">${stores.filter((st) => st.active).map((st) => `<option value="${st.id}">${esc(st.name)}</option>`).join('')}</select></label>` : '<div></div>'}
           <label class="full"><span class="lbl">Descrição</span><textarea name="description" maxlength="3000">${esc(v.description || '')}</textarea></label>
           <div class="full"><span class="lbl" style="font-weight:600;font-size:.9rem">Imagem principal</span><div class="img-field"><img id="imgPrev" src="${esc(asset(image))}" alt=""/><input type="file" id="imgFile" accept="image/png,image/jpeg,image/webp,image/gif" style="max-width:280px"/>${image ? '<button type="button" class="btn btn-ghost btn-sm" id="imgClear">Remover imagem</button>' : ''}</div></div>
           <label class="check"><input type="checkbox" name="active" ${v.active ? 'checked' : ''}/> Ativo (visível na loja)</label>
@@ -558,7 +576,7 @@
       if (!CB.validateForm(f)) return CB.toast('Verifique os campos destacados.', 'error');
       const d = CB.formData(f);
       d.image = image || null;
-      for (const k of ['brand_id', 'category_id', 'capacity_ah', 'voltage', 'cca', 'warranty_months', 'min_stock', 'initial_stock']) if (d[k] !== undefined) d[k] = d[k] === '' ? null : Number(d[k]);
+      for (const k of ['brand_id', 'category_id', 'capacity_ah', 'voltage', 'cca', 'warranty_months', 'min_stock', 'initial_stock', 'initial_store_id']) if (d[k] !== undefined) d[k] = d[k] === '' ? null : Number(d[k]);
       const btn = f.querySelector('[type=submit]');
       btn.disabled = true;
       try {
@@ -623,56 +641,87 @@
     );
   }
 
-  /* ================= Estoque ================= */
+  /* ================= Estoque (por loja) ================= */
   async function pageStock(q) {
-    setTitle('Estoque');
-    const [products, suppliers] = await Promise.all([CB.get('/api/admin/products'), CB.get('/api/admin/r/suppliers')]);
-    content.innerHTML = `<div class="grid-2">
+    setTitle('Estoque por loja');
+    const [products, suppliers, matrix] = await Promise.all([CB.get('/api/admin/products'), CB.get('/api/admin/r/suppliers'), CB.get('/api/admin/stock/matrix')]);
+    const stores = matrix.stores.filter((st) => st.active);
+    const short = (st) => st.neighborhood || st.name.replace(/^Cardoso Baterias\s*/, '');
+    const storeOpts = (sel, placeholder = 'Selecione…') => `<option value="">${placeholder}</option>${stores.map((st) => `<option value="${st.id}" ${String(sel) === String(st.id) ? 'selected' : ''}>${esc(st.name)}</option>`).join('')}`;
+    const cell = (b) => `<td class="num" title="Físico ${b.stock_qty} · reservado ${b.reserved_qty}"><strong class="${b.available_qty <= 0 ? 'mov-neg' : ''}">${b.available_qty}</strong>${b.reserved_qty ? `<br><span class="small muted">${b.stock_qty} fís. · ${b.reserved_qty} res.</span>` : ''}</td>`;
+    content.innerHTML = `
+    <div class="card"><div class="card-head"><h2>Posição por loja</h2><span class="small muted">Disponível = físico − reservado. Passe o mouse para ver os detalhes.</span></div>
+      <div class="table-wrap" style="max-height:460px;overflow:auto"><table class="table"><thead><tr><th>Produto</th>${stores.map((st) => `<th class="num">${esc(short(st))}</th>`).join('')}<th class="num">Total disp.</th><th class="num">Mín.</th><th></th></tr></thead><tbody>${matrix.products
+        .filter((p) => p.active)
+        .map((p) => `<tr><td><a href="#/produtos/${p.id}">${esc(p.name)}</a><br><span class="small muted">${esc(p.sku)}</span></td>${stores.map((st) => cell(p.by_store.find((b) => b.store_id === st.id))).join('')}<td class="num"><strong>${p.available_qty}</strong></td><td class="num">${p.min_stock}</td><td>${stockBadge(p)}</td></tr>`)
+        .join('')}
+        <tr><td><strong>Total de unidades</strong></td>${stores.map((st) => `<td class="num"><strong>${matrix.products.reduce((a, p) => a + Math.max(p.by_store.find((b) => b.store_id === st.id).available_qty, 0), 0)}</strong></td>`).join('')}<td class="num"><strong>${matrix.products.reduce((a, p) => a + Math.max(p.available_qty, 0), 0)}</strong></td><td></td><td></td></tr>
+      </tbody></table></div></div>
+    <div class="grid-2">
       <form class="card" id="movForm" novalidate><h2>Registrar movimentação</h2>
         <div class="form-grid">
-          <label class="full"><span class="lbl">Produto *</span><select name="productId" required data-msg="Selecione o produto."><option value="">Selecione…</option>${products.map((p) => `<option value="${p.id}" ${String(q.productId) === String(p.id) ? 'selected' : ''}>${esc(p.name)} (${esc(p.sku)}) — físico ${p.stock_qty}, reservado ${p.reserved_qty}</option>`).join('')}</select></label>
-          <label><span class="lbl">Tipo *</span><select name="type"><option value="entrada">Entrada (compra/reposição)</option><option value="saida">Saída (perda, garantia, uso)</option><option value="ajuste">Ajuste (contagem de inventário)</option></select></label>
+          <label class="full"><span class="lbl">Produto *</span><select name="productId" required data-msg="Selecione o produto."><option value="">Selecione…</option>${products.map((p) => `<option value="${p.id}" ${String(q.productId) === String(p.id) ? 'selected' : ''}>${esc(p.name)} (${esc(p.sku)})</option>`).join('')}</select></label>
+          <label><span class="lbl">Tipo *</span><select name="type"><option value="entrada">Entrada (compra/reposição)</option><option value="saida">Saída (perda, garantia, uso)</option><option value="ajuste">Ajuste (contagem de inventário)</option><option value="transferencia">Transferência entre lojas</option></select></label>
+          <label><span class="lbl" data-store-label>Loja *</span><select name="storeId" required data-msg="Selecione a loja.">${storeOpts(q.storeId)}</select></label>
+          <label data-for="transf" hidden><span class="lbl">Loja de destino *</span><select name="toStoreId" required data-msg="Selecione a loja de destino.">${storeOpts('')}</select></label>
+          <div class="full small muted" id="storePos"></div>
           <label data-for="qty"><span class="lbl">Quantidade *</span><input name="quantity" type="number" min="1" max="100000" required data-msg="Informe a quantidade (1 ou mais)."/></label>
-          <label data-for="adj" hidden><span class="lbl">Nova quantidade física *</span><input name="newQty" type="number" min="0" max="100000" required data-msg="Informe a quantidade contada."/></label>
+          <label data-for="adj" hidden><span class="lbl">Nova quantidade física na loja *</span><input name="newQty" type="number" min="0" max="100000" required data-msg="Informe a quantidade contada."/></label>
           <label class="full"><span class="lbl">Motivo *</span><input name="reason" required minlength="3" maxlength="300" placeholder="Ex.: NF 1234 do fornecedor" data-msg="Informe o motivo (mín. 3 caracteres)."/></label>
           <label data-for="in"><span class="lbl">Fornecedor</span><select name="supplierId"><option value="">—</option>${suppliers.map((s) => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></label>
           <label data-for="in"><span class="lbl">Custo unitário (R$)</span><input name="unitCostCents" inputmode="decimal" placeholder="0,00"/></label>
           <label class="check full" data-for="in"><input type="checkbox" name="updateCost"/> Atualizar o custo do produto com este valor</label>
         </div>
         <button class="btn btn-primary" style="margin-top:14px" type="submit">Registrar</button>
-        <p class="small muted" style="margin-top:8px">Saídas não podem ultrapassar o disponível (físico − reservado). Ajustes não podem ficar abaixo das reservas. O estoque nunca fica negativo.</p>
+        <p class="small muted" style="margin-top:8px">Cada loja tem seu estoque. Saídas e transferências não podem ultrapassar o disponível da loja (físico − reservado). Ajustes não podem ficar abaixo das reservas da loja. O estoque nunca fica negativo.</p>
       </form>
-      <div class="card"><h2>Posição atual</h2><div class="table-wrap" style="max-height:440px;overflow:auto"><table class="table"><thead><tr><th>Produto</th><th class="num">Físico</th><th class="num">Reserv.</th><th class="num">Disp.</th><th class="num">Mín.</th><th></th></tr></thead><tbody>${products
-        .filter((p) => p.active)
-        .map((p) => `<tr><td>${esc(p.name)}<br><span class="small muted">${esc(p.sku)}</span></td><td class="num">${p.stock_qty}</td><td class="num">${p.reserved_qty}</td><td class="num"><strong>${p.available_qty}</strong></td><td class="num">${p.min_stock}</td><td>${stockBadge(p)}</td></tr>`)
-        .join('')}</tbody></table></div></div>
+      <div class="card"><h2>Resumo por loja</h2>
+        <div class="table-wrap"><table class="table"><thead><tr><th>Loja</th><th class="num">Físico</th><th class="num">Reservado</th><th class="num">Disponível</th><th class="num">Zerados</th></tr></thead><tbody>${stores
+          .map((st) => {
+            const t = matrix.products.filter((p) => p.active).map((p) => p.by_store.find((b) => b.store_id === st.id));
+            return `<tr><td>${esc(short(st))}</td><td class="num">${t.reduce((a, b) => a + b.stock_qty, 0)}</td><td class="num">${t.reduce((a, b) => a + b.reserved_qty, 0)}</td><td class="num"><strong>${t.reduce((a, b) => a + b.available_qty, 0)}</strong></td><td class="num">${t.filter((b) => b.available_qty <= 0).length}</td></tr>`;
+          })
+          .join('')}</tbody></table></div>
+        <p class="small muted">Para equilibrar as lojas, use “Transferência entre lojas”. Ela gera uma saída na origem e uma entrada no destino, com o mesmo motivo e responsável.</p>
+      </div>
     </div>
     <div class="card"><div class="card-head"><h2>Histórico de movimentações</h2></div>
       <form class="toolbar" id="mf">
         <label><span class="lbl">Produto</span><select name="productId"><option value="">Todos</option>${products.map((p) => `<option value="${p.id}" ${String(q.productId) === String(p.id) ? 'selected' : ''}>${esc(p.sku)}</option>`).join('')}</select></label>
+        <label><span class="lbl">Loja</span><select name="storeId">${storeOpts(q.storeId, 'Todas')}</select></label>
         <label><span class="lbl">Tipo</span><select name="type"><option value="">Todos</option>${Object.entries(CB.MOV).map(([k, v]) => `<option value="${k}" ${q.type === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
         <label><span class="lbl">De</span><input type="date" name="from" value="${esc(q.from || '')}"/></label>
         <label><span class="lbl">Até</span><input type="date" name="to" value="${esc(q.to || '')}"/></label>
         <button class="btn btn-dark btn-sm">Filtrar</button>
       </form><div id="movs"></div></div>`;
     const f = document.getElementById('movForm');
+    const showPos = () => {
+      const p = matrix.products.find((x) => String(x.id) === f.productId.value);
+      document.getElementById('storePos').innerHTML = p
+        ? 'Neste produto: ' + stores.map((st) => { const b = p.by_store.find((x) => x.store_id === st.id); return `<strong>${esc(short(st))}</strong> ${b.available_qty} disp. (${b.stock_qty} fís., ${b.reserved_qty} res.)`; }).join(' · ')
+        : '';
+    };
     const sync = () => {
       const t = f.type.value;
+      f.querySelector('[data-store-label]').textContent = t === 'transferencia' ? 'Loja de origem *' : 'Loja *';
       f.querySelectorAll('[data-for]').forEach((el) => {
-        const show = (el.dataset.for === 'qty' && t !== 'ajuste') || (el.dataset.for === 'adj' && t === 'ajuste') || (el.dataset.for === 'in' && t === 'entrada');
+        const show = (el.dataset.for === 'qty' && t !== 'ajuste') || (el.dataset.for === 'adj' && t === 'ajuste') || (el.dataset.for === 'in' && t === 'entrada') || (el.dataset.for === 'transf' && t === 'transferencia');
         el.hidden = !show;
         el.querySelectorAll('input,select').forEach((i) => (i.disabled = !show));
       });
     };
     f.type.onchange = sync;
+    f.productId.onchange = showPos;
     sync();
+    showPos();
     f.onsubmit = async (e) => {
       e.preventDefault();
       if (!CB.validateForm(f)) return;
       const d = CB.formData(f);
-      const body = { productId: Number(d.productId), type: d.type, reason: d.reason };
+      const body = { productId: Number(d.productId), storeId: Number(d.storeId), type: d.type, reason: d.reason };
       if (d.type === 'ajuste') body.newQty = Number(d.newQty);
       else body.quantity = Number(d.quantity);
+      if (d.type === 'transferencia') body.toStoreId = Number(d.toStoreId);
       if (d.type === 'entrada') {
         if (d.supplierId) body.supplierId = Number(d.supplierId);
         if (d.unitCostCents) body.unitCostCents = d.unitCostCents;
@@ -682,8 +731,8 @@
       btn.disabled = true;
       try {
         const p = await guard(() => CB.post('/api/admin/stock/movements', body));
-        CB.toast(`Movimentação registrada. ${p.name}: físico ${p.stock_qty}, disponível ${p.available_qty}.`);
-        setQuery('/estoque', { productId: p.id });
+        CB.toast(`Movimentação registrada. ${p.name}: ${p.by_store.map((b) => `${b.neighborhood || b.name} ${b.available_qty}`).join(' · ')} (total disp. ${p.available_qty}).`, 'ok', 6000);
+        setQuery('/estoque', { productId: p.id, storeId: d.storeId });
       } catch (err) {
         CB.showErrors(f, err);
         btn.disabled = false;
@@ -692,7 +741,7 @@
     document.getElementById('mf').onsubmit = (e) => (e.preventDefault(), setQuery('/estoque', CB.formData(e.target)));
     const box = document.getElementById('movs');
     CB.loading(box);
-    const r = await CB.get('/api/admin/stock/movements', { productId: q.productId, type: q.type, from: q.from, to: q.to, limit: 200 });
+    const r = await CB.get('/api/admin/stock/movements', { productId: q.productId, storeId: q.storeId, type: q.type, from: q.from, to: q.to, limit: 60 });
     box.innerHTML = movTable(r.items) + `<p class="small muted">${r.total} movimentação(ões)${r.total > r.items.length ? ` — exibindo as ${r.items.length} mais recentes. Use Relatórios para exportar tudo.` : ''}</p>`;
   }
 
@@ -723,6 +772,31 @@
       cols: [['image', '', 'image'], ['title', 'Título'], ['cta_label', 'Botão'], ['active', 'Ativo', 'bool'], ['sort', 'Ordem']],
       fields: [['title', 'Título', 'text', { required: true, max: 100 }], ['subtitle', 'Subtítulo', 'text'], ['cta_label', 'Texto do botão', 'text'], ['cta_link', 'Link do botão (ex.: #/catalogo)', 'text'], ['image', 'Imagem', 'image'], ['sort', 'Ordem', 'number'], ['active', 'Ativo', 'bool']],
     },
+    lojas: {
+      api: 'stores',
+      title: 'Lojas / unidades',
+      one: 'loja',
+      cols: [['image', '', 'image'], ['name', 'Unidade'], ['phone', 'Telefone'], ['rating', 'Nota'], ['rating_count', 'Avaliações'], ['pickup_enabled', 'Retirada', 'bool'], ['active', 'Ativa', 'bool'], ['sort', 'Ordem']],
+      fields: [
+        ['name', 'Nome da unidade', 'text', { required: true, max: 100 }],
+        ['neighborhood', 'Bairro/região (nome curto)', 'text', { max: 80 }],
+        ['city', 'Cidade', 'text', { max: 80 }],
+        ['address', 'Endereço completo', 'textarea', { max: 300 }],
+        ['phone', 'Telefone', 'text', { max: 30 }],
+        ['whatsapp', 'WhatsApp da unidade (55 + DDD + número, só dígitos; vazio = WhatsApp principal)', 'text', { max: 13 }],
+        ['hours', 'Horários', 'textarea', { max: 500 }],
+        ['maps_url', 'Link do Google Maps (botão "Como chegar")', 'text', { max: 500 }],
+        ['rating', 'Nota no Google (ex.: 4,9)', 'text', { max: 4 }],
+        ['rating_count', 'Nº de avaliações', 'number', { max: 1000000 }],
+        ['rating_source', 'Fonte da nota (ex.: Google, consultado em 05/10/2026)', 'text', { max: 120 }],
+        ['review_quote', 'Trecho de avaliação de cliente', 'text', { max: 300 }],
+        ['notes', 'Observações internas (não aparecem no site)', 'text', { max: 300 }],
+        ['image', 'Foto da fachada', 'image'],
+        ['sort', 'Ordem', 'number'],
+        ['pickup_enabled', 'Aceita retirada de pedidos do site', 'bool'],
+        ['active', 'Ativa', 'bool'],
+      ],
+    },
     servicos: {
       api: 'services',
       title: 'Serviços',
@@ -751,7 +825,7 @@
     const req = opt.required ? 'required' : '';
     if (type === 'textarea') return `<label class="full"><span class="lbl">${esc(label)}</span><textarea name="${name}" ${req} maxlength="${opt.max || 3000}">${esc(val || '')}</textarea></label>`;
     if (type === 'bool') return `<label class="check"><input type="checkbox" name="${name}" ${val === undefined || val ? 'checked' : ''}/> ${esc(label)}</label>`;
-    if (type === 'number') return `<label><span class="lbl">${esc(label)}</span><input type="number" name="${name}" min="0" max="999" value="${esc(val ?? 0)}"/></label>`;
+    if (type === 'number') return `<label><span class="lbl">${esc(label)}</span><input type="number" name="${name}" min="0" max="${opt.max || 999}" value="${esc(val ?? 0)}"/></label>`;
     if (type === 'select') return `<label><span class="lbl">${esc(label)}</span><select name="${name}">${opt.options.map(([k, l]) => `<option value="${k}" ${val === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
     if (type === 'image') return `<div class="full"><span class="lbl" style="font-weight:600;font-size:.9rem">${esc(label)}</span><div class="img-field"><img data-prev="${name}" src="${esc(asset(val))}" alt=""/><input type="file" data-file="${name}" accept="image/png,image/jpeg,image/webp,image/gif" style="max-width:260px"/></div><input type="hidden" name="${name}" value="${esc(val || '')}"/></div>`;
     const t = type === 'email' ? 'email' : 'text';
@@ -1025,7 +1099,7 @@
     [/^\/produtos$/, (m, q) => pageProducts(q)],
     [/^\/produtos\/(novo|\d+)$/, (m) => pageProductForm(m[1])],
     [/^\/estoque$/, (m, q) => pageStock(q)],
-    [/^\/(marcas|categorias|fornecedores|clientes|banners|servicos|galeria|faq)$/, (m, q) => pageResource(m[1], q)],
+    [/^\/(marcas|categorias|fornecedores|clientes|lojas|banners|servicos|galeria|faq)$/, (m, q) => pageResource(m[1], q)],
     [/^\/(conteudo|configuracoes)$/, (m) => pageSettings(m[1])],
     [/^\/relatorios$/, (m, q) => pageReports(q)],
     [/^\/demo$/, pageDemo],

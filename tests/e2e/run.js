@@ -103,17 +103,28 @@ function exe() {
       return `produto #${productId}, preço ${brl(p.price_cents)}`;
     });
 
-    await step('3. Registrar entrada de estoque', async () => {
+    await step('3. Registrar entrada de estoque e transferir entre lojas', async () => {
       await page.goto(BASE + `admin/#/estoque?productId=${productId}`);
       await page.waitForSelector('#movForm');
       await page.selectOption('#movForm [name=type]', 'entrada');
+      await page.selectOption('#movForm [name=storeId]', { index: 1 });
       await page.fill('#movForm [name=quantity]', '6');
       await page.fill('#movForm [name=reason]', 'NF E2E 001');
       await page.click('#movForm [type=submit]');
       await toast(page, /Movimentação registrada/);
+      await page.waitForSelector('#movForm');
+      await page.selectOption('#movForm [name=type]', 'transferencia');
+      await page.selectOption('#movForm [name=storeId]', { index: 1 });
+      await page.selectOption('#movForm [name=toStoreId]', { index: 2 });
+      await page.fill('#movForm [name=quantity]', '1');
+      await page.fill('#movForm [name=reason]', 'Reforço E2E');
+      await page.click('#movForm [type=submit]');
+      await toast(page, /Movimentação registrada/);
       const p = await api(page, 'GET', `/api/admin/products/${productId}`);
-      assert(p.stock_qty === 6 && p.available_qty === 6, 'estoque 6');
-      return 'físico 6, disponível 6';
+      assert(p.stock_qty === 6 && p.available_qty === 6, 'estoque total 6');
+      const [a, b] = p.by_store;
+      assert(a.stock_qty === 5 && b.stock_qty === 1, `por loja: ${a.stock_qty}/${b.stock_qty}`);
+      return `total 6 — ${a.name}: 5, ${b.name}: 1 (transferência registrada)`;
     });
 
     await step('4. Encontrar o produto no site (busca e consulta por veículo)', async () => {
@@ -157,6 +168,11 @@ function exe() {
       await page.click('#co [type=submit]');
       await page.waitForSelector('[name=address_street].invalid');
       await page.check('[name=fulfillment][value=retirada]');
+      await page.waitForFunction(() => document.querySelectorAll('#pickupStores .option-card.disabled').length >= 1 && document.querySelectorAll('#pickupStores input:not(:disabled)').length >= 1, null, { timeout: 10000 })
+        .catch(() => {
+          throw new Error('lojas sem os 2 itens deveriam ficar bloqueadas na retirada');
+        });
+      await page.check('#pickupStores input[name=pickupStoreId]:not(:disabled)');
       await page.check('[name=paymentMethod][value=pix]');
       await page.waitForSelector('#co [type=submit]:not([disabled])');
       await page.click('#co [type=submit]');
@@ -172,7 +188,8 @@ function exe() {
       assert(p.reserved_qty === 2 && p.stock_qty === 6 && p.available_qty === 4, `reservado ${p.reserved_qty}`);
       const pub = await api(page, 'GET', `/api/public/products/${productId}`);
       assert(pub.available_qty === 4, 'catálogo desconta reservas');
-      return 'físico 6, reservado 2, disponível 4';
+      assert(p.by_store[0].reserved_qty === 2 && p.by_store[1].reserved_qty === 0, 'reserva na loja escolhida');
+      return `físico 6, reservado 2 (${p.by_store[0].name}), disponível 4`;
     });
 
     await step('8. Simular pagamento e concluir a venda', async () => {
@@ -209,7 +226,8 @@ function exe() {
     });
 
     await step('10. Cancelar outro pedido e verificar a liberação da reserva', async () => {
-      const o = await api(page, 'POST', '/api/public/orders', { name: 'Cliente E2E 2', phone: '11977775555', fulfillment: 'retirada', paymentMethod: 'retirada', items: [{ productId, quantity: 3 }] });
+      const storeA = (await api(page, 'GET', `/api/admin/products/${productId}`)).by_store[0];
+      const o = await api(page, 'POST', '/api/public/orders', { name: 'Cliente E2E 2', phone: '11977775555', fulfillment: 'retirada', pickupStoreId: storeA.store_id, paymentMethod: 'retirada', items: [{ productId, quantity: 3 }] });
       code2 = o.code;
       let p = await api(page, 'GET', `/api/admin/products/${productId}`);
       assert(p.reserved_qty === 3 && p.available_qty === 1, 'reservou 3');
@@ -307,7 +325,7 @@ function exe() {
 
     await step('15. Verificar o layout no celular (390×844)', async () => {
       const shots = [];
-      for (const [name, hash] of [['home', ''], ['catalogo', '#/catalogo'], ['produto', `#/produto/${productId}`], ['carrinho', '#/carrinho']]) {
+      for (const [name, hash] of [['home', ''], ['catalogo', '#/catalogo'], ['produto', `#/produto/${productId}`], ['carrinho', '#/carrinho'], ['lojas', '#/lojas']]) {
         if (hash !== null) await page.goto(BASE + hash);
         await page.waitForTimeout(900);
         const m = await page.evaluate(() => {

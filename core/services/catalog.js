@@ -93,6 +93,7 @@ function getPublic(id) {
   if (!p) throw notFound('Produto');
   p.applications = applicationsOf(p.id);
   p.images = imagesOf(p.id);
+  p.stores_stock = inventory.availabilityByStore(p.id).map((r) => ({ store_id: r.store_id, name: r.name, neighborhood: r.neighborhood, available_qty: Math.max(r.available_qty, 0) }));
   return toPublic(p);
 }
 
@@ -179,6 +180,7 @@ function getAdmin(id) {
   p.applications = applicationsOf(p.id);
   p.images = imagesOf(p.id);
   p.has_history = !!get().prepare('SELECT 1 FROM order_items WHERE product_id = ? LIMIT 1').get(p.id);
+  p.by_store = inventory.availabilityByStore(p.id);
   return p;
 }
 
@@ -212,7 +214,7 @@ function create(input, { user }) {
       .run(...cols.map((c) => data[c]), ts, ts);
     const id = r.lastInsertRowid;
     if (initialStock > 0) {
-      inventory.applyMovement({ productId: id, type: 'entrada', quantity: initialStock, reason: 'Estoque inicial no cadastro do produto', user, unitCostCents: data.cost_cents });
+      inventory.applyMovement({ productId: id, storeId: input.initial_store_id ? Number(input.initial_store_id) : null, type: 'entrada', quantity: initialStock, reason: 'Estoque inicial no cadastro do produto', user, unitCostCents: data.cost_cents });
     }
     return getAdmin(id);
   });

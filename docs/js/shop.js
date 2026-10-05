@@ -150,6 +150,10 @@
             <a class="btn btn-wa" href="${esc(waLink('Olá! Vim pelo site da Cardoso Baterias e gostaria de um orçamento de bateria. Meu veículo é [marca/modelo/ano].'))}" target="_blank" rel="noopener">Orçamento no WhatsApp</a>
             <a class="btn btn-outline-light" href="#/servicos">Serviços</a>
           </div>
+          ${(() => {
+            const sum = ratingSummary(h.stores || []);
+            return sum ? `<a class="hero-rating" href="#/lojas">${stars(sum.avg)} <strong>${sum.avg}</strong> no Google · ${sum.total} avaliações · ${sum.stores} lojas</a>` : '';
+          })()}
           <div class="hero-badges"><span>Teste de bateria</span><span>Instalação</span><span>Retirada ou entrega</span></div>
         </div>
         <form class="finder" id="finder">
@@ -182,6 +186,11 @@
       <div class="cards-4">${h.services.map(serviceCard).join('')}</div>
     </div></section>
 
+    ${h.stores && h.stores.length ? `<section class="section"><div class="container">
+      <div class="section-head"><h2>Nossas lojas</h2><a class="btn btn-ghost" href="#/lojas">Ver lojas</a></div>
+      ${storesGrid(h.stores)}${ratingNote(ratingSummary(h.stores))}
+    </div></section>` : ''}
+
     <section class="section section-alt"><div class="container about-grid">
       <div><div class="section-head"><h2>${esc(S.about_title)}</h2></div><p>${CB.nl2br(S.about_text.split('\n\n')[0])}</p><a class="btn btn-dark" href="#/sobre">Conheça a loja</a></div>
       <ul class="highlights">${S.about_highlights.split('\n').filter(Boolean).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
@@ -208,6 +217,50 @@
   const serviceCard = (s) => `<article class="service-card"><img src="${esc(asset(s.image))}" alt="" loading="lazy" />
     <div class="sc-body" style="color:var(--text)"><h3>${esc(s.title)}</h3><p class="muted" style="margin:0">${esc(s.summary)}</p>${s.price_info ? `<span class="badge">${esc(s.price_info)}</span>` : ''}
     <a class="btn btn-wa btn-sm" target="_blank" rel="noopener" href="${esc(waLink(`Olá! Vim pelo site da Cardoso Baterias e gostaria de saber sobre o serviço: ${s.title}.`))}">Agendar pelo WhatsApp</a></div></article>`;
+  /* ---------------- Lojas / unidades ---------------- */
+  const ratingNum = (r) => Number(String(r || '').replace(',', '.')) || 0;
+  const stars = (r) => {
+    const n = Math.round(ratingNum(r));
+    return `<span class="stars" aria-hidden="true">${'★'.repeat(n)}${'☆'.repeat(5 - n)}</span>`;
+  };
+  function ratingSummary(stores) {
+    const rated = stores.filter((st) => ratingNum(st.rating) && st.rating_count);
+    const total = rated.reduce((a, st) => a + st.rating_count, 0);
+    if (!total) return null;
+    const avg = rated.reduce((a, st) => a + ratingNum(st.rating) * st.rating_count, 0) / total;
+    return { avg: avg.toFixed(1).replace('.', ','), total, stores: rated.length, source: (rated[0].rating_source || '').trim() };
+  }
+  const telHref = (p) => `tel:+55${CB.digits(p)}`;
+  function storeCard(st) {
+    const wa = st.whatsapp ? CB.wa(st.whatsapp, `Olá! Vim pelo site e gostaria de falar com a ${st.name}.`) : waLink(`Olá! Vim pelo site da Cardoso Baterias e gostaria de falar com a unidade ${st.neighborhood || st.name}.`);
+    return `<article class="store-card">
+      ${st.image ? `<img src="${esc(asset(st.image))}" alt="" loading="lazy"/>` : ''}
+      <div class="st-body">
+        <h3>${esc(st.name)}</h3>
+        ${ratingNum(st.rating) ? `<div class="rating">${stars(st.rating)} <strong>${esc(st.rating)}</strong> <span class="muted">(${st.rating_count || 0} avaliações no Google)</span></div>` : ''}
+        <ul class="st-info">
+          ${st.address ? `<li><span aria-hidden="true">📍</span> ${esc(st.address)}${st.city && !st.address.includes(st.city) ? ` — ${esc(st.city)}` : ''}</li>` : ''}
+          ${st.phone ? `<li><span aria-hidden="true">📞</span> <a href="${esc(telHref(st.phone))}">${esc(st.phone)}</a></li>` : ''}
+          ${st.hours ? `<li><span aria-hidden="true">🕗</span> ${CB.nl2br(st.hours)}</li>` : ''}
+        </ul>
+        ${st.review_quote ? `<blockquote class="review">“${esc(st.review_quote)}”<cite>— cliente, avaliação no Google</cite></blockquote>` : ''}
+        <div class="st-actions">
+          <a class="btn btn-wa btn-sm" target="_blank" rel="noopener" href="${esc(wa)}">WhatsApp</a>
+          ${st.phone ? `<a class="btn btn-ghost btn-sm" href="${esc(telHref(st.phone))}">Ligar</a>` : ''}
+          ${st.maps_url ? `<a class="btn btn-dark btn-sm" target="_blank" rel="noopener" href="${esc(st.maps_url)}">Como chegar</a>` : ''}
+        </div>
+      </div></article>`;
+  }
+  const storesGrid = (stores) => `<div class="stores-grid">${stores.map(storeCard).join('')}</div>`;
+  const ratingNote = (sum) => (sum ? `<p class="small muted" style="margin-top:12px">Notas e trechos de avaliações: ${esc(sum.source || 'Google')}. Endereços e horários marcados "a confirmar" são completados pelo painel.</p>` : '');
+
+  async function pageStores() {
+    const stores = await CB.get('/api/public/stores');
+    const sum = ratingSummary(stores);
+    app.innerHTML = `${pageTitle('Nossas lojas', sum ? `Nota ${sum.avg} no Google · ${sum.total} avaliações em ${sum.stores} unidades` : 'Encontre a unidade mais perto de você.')}
+    <section class="section"><div class="container">${stores.length ? storesGrid(stores) + ratingNote(sum) : CB.empty('Nenhuma loja cadastrada.')}</div></section>`;
+  }
+
   const faqItem = (f) => `<details><summary>${esc(f.question)}</summary><p>${CB.nl2br(f.answer)}</p></details>`;
 
   async function pageCatalog(q) {
@@ -336,6 +389,7 @@
         <div class="pp-buy">
           ${priceBlock(p)}
           ${stockLine(p)}
+          ${(p.stores_stock || []).length > 1 ? `<div class="store-avail"><span class="small muted">Disponível por loja:</span> ${p.stores_stock.map((b) => `<span class="badge ${b.available_qty > 0 ? 'badge-ok' : ''}">${esc(b.neighborhood || b.name)}: ${b.available_qty}</span>`).join(' ')}</div>` : ''}
           <div class="buy-row">
             <div class="qty"><button type="button" data-q="-1" aria-label="Diminuir">−</button><input id="qty" type="number" min="1" max="${Math.max(p.available_qty, 1)}" value="1" aria-label="Quantidade"/><button type="button" data-q="1" aria-label="Aumentar">+</button></div>
             <button class="btn btn-primary" id="addCart" ${p.available_qty <= 0 ? 'disabled' : ''}>Adicionar ao carrinho</button>
@@ -469,7 +523,8 @@
         <a class="btn btn-wa" target="_blank" rel="noopener" href="${esc(waLink('Olá! Vim pelo site da Cardoso Baterias e gostaria de atendimento.'))}">Abrir WhatsApp</a>
       </div>
       <div class="panel"><h3>Horários</h3><p>${CB.nl2br(S.business_hours)}</p><span class="demo-flag">Endereço e horários editáveis no painel</span></div>
-    </div></section>`;
+    </div></section>
+    ${(S.stores || []).length ? `<section class="section" style="padding-top:0"><div class="container"><div class="section-head"><h2>Nossas lojas</h2></div>${storesGrid(S.stores)}</div></section>` : ''}`;
   }
 
   /* ---------------- Carrinho ---------------- */
@@ -571,6 +626,7 @@
           <label class="full"><span class="lbl">Veículo (opcional)</span><input name="vehicle" maxlength="120" placeholder="Ex.: Fiat Uno 2015 1.0"/></label>
         </div></fieldset>
         <fieldset><legend>Recebimento</legend><div class="option-cards" id="fulfill"></div></fieldset>
+        <fieldset id="pickupBox"><legend>Loja para retirada</legend><div class="option-cards" id="pickupStores"></div></fieldset>
         <fieldset id="addr" hidden><legend>Endereço de entrega</legend><div class="form-grid">
           <label class="full"><span class="lbl">Rua *</span><input name="address_street" required maxlength="150" data-msg="Informe a rua."/></label>
           <label><span class="lbl">Número *</span><input name="address_number" required maxlength="20" data-msg="Informe o número."/></label>
@@ -591,6 +647,10 @@
     fulfill.innerHTML = `
       <label class="option-card ${S.pickup_enabled ? '' : 'disabled'}"><input type="radio" name="fulfillment" value="retirada" ${S.pickup_enabled ? 'checked' : 'disabled'}/><span>Retirada na loja<small>${esc(S.pickup_instructions)}</small></span></label>
       <label class="option-card ${S.delivery_enabled ? '' : 'disabled'}"><input type="radio" name="fulfillment" value="entrega" ${S.delivery_enabled ? (S.pickup_enabled ? '' : 'checked') : 'disabled'}/><span>Entrega<small>${S.delivery_enabled ? `Frete demonstrativo: ${brl(S.delivery_fee_cents)}${S.delivery_free_above_cents ? ` · grátis acima de ${brl(S.delivery_free_above_cents)}` : ''}` : 'Indisponível no momento'}</small></span></label>`;
+    const pickStores = (S.stores || []).filter((st) => st.pickup_enabled);
+    document.getElementById('pickupStores').innerHTML = pickStores.length
+      ? pickStores.map((st, i) => `<label class="option-card"><input type="radio" name="pickupStoreId" value="${st.id}" ${pickStores.length === 1 ? 'checked' : ''} required data-msg="Escolha a loja de retirada."/><span>${esc(st.name)}<small>${esc([st.address, st.hours && st.hours.split('\n')[0]].filter(Boolean).join(' · '))}</small><small class="st-stock" data-st="${st.id}"></small></span></label>`).join('')
+      : '<p class="muted small">Retirada na loja principal.</p>';
     const paym = document.getElementById('paym');
     paym.innerHTML = `
       <label class="option-card"><input type="radio" name="paymentMethod" value="pix" checked/><span>Pix demonstrativo<small>QR Code ilustrativo, sem cobrança</small></span></label>
@@ -603,6 +663,8 @@
       const f = CB.formData(form);
       const isDelivery = f.fulfillment === 'entrega';
       document.getElementById('addr').hidden = !isDelivery;
+      document.getElementById('pickupBox').hidden = isDelivery;
+      document.querySelectorAll('#pickupBox input').forEach((i) => (i.disabled = isDelivery));
       document.querySelectorAll('#addr input').forEach((i) => (i.disabled = !isDelivery));
       const pp = document.getElementById('payPickup');
       pp.classList.toggle('disabled', isDelivery);
@@ -610,6 +672,22 @@
       if (isDelivery && f.paymentMethod === 'retirada') form.querySelector('[value=pix]').checked = true;
       try {
         const qt = await CB.post('/api/public/cart/quote', { items: cart.read(), fulfillment: f.fulfillment });
+        // lojas de retirada: só as que têm todos os itens do carrinho
+        let pickupOk = 0;
+        document.querySelectorAll('#pickupStores input[name=pickupStoreId]').forEach((inp) => {
+          const st = (qt.stores || []).find((x) => String(x.id) === inp.value);
+          const ok = !st || st.ok;
+          if (ok) pickupOk++;
+          inp.disabled = isDelivery || !ok;
+          if (!ok && inp.checked) inp.checked = false;
+          inp.closest('.option-card').classList.toggle('disabled', !ok);
+          const lbl = document.querySelector(`.st-stock[data-st="${inp.value}"]`);
+          if (lbl) lbl.innerHTML = ok ? '<b style="color:var(--ok)">✔ Itens disponíveis nesta loja</b>' : '<b style="color:var(--danger)">Sem todos os itens nesta loja</b>';
+        });
+        if (!isDelivery && pickupOk === 1) {
+          const only = document.querySelector('#pickupStores input[name=pickupStoreId]:not(:disabled)');
+          if (only) only.checked = true;
+        }
         summary.innerHTML = `<h3>Resumo do pedido</h3>
           ${qt.lines.map((l) => `<div class="summary-row small"><span>${l.quantity}x ${esc(l.name)}</span><span class="nowrap">${brl(l.total_cents)}</span></div>`).join('')}
           <div class="summary-row" style="border-top:1px solid var(--gray-100);margin-top:6px"><span>Subtotal</span><strong>${brl(qt.subtotal_cents)}</strong></div>
@@ -637,6 +715,7 @@
         fulfillment: f.fulfillment,
         paymentMethod: f.paymentMethod,
         notes: f.notes,
+        pickupStoreId: f.fulfillment === 'retirada' && f.pickupStoreId ? Number(f.pickupStoreId) : undefined,
         items: cart.read(),
       };
       if (f.fulfillment === 'entrega') {
@@ -685,7 +764,7 @@
         <div class="panel">
           <div class="order-status" style="margin-bottom:10px">${statusBadge(o.status)} ${payBadge(o.payment_status)}</div>
           <h2 style="margin-bottom:4px">Pedido ${esc(o.code)}</h2>
-          <p class="muted small">Criado em ${CB.dt(o.created_at)} · ${o.fulfillment === 'entrega' ? 'Entrega' : 'Retirada na loja'} · ${esc(CB.PAY_METHOD[o.payment_method] || o.payment_method)}</p>
+          <p class="muted small">Criado em ${CB.dt(o.created_at)} · ${o.fulfillment === 'entrega' ? 'Entrega' : `Retirada${o.pickup_store_name ? `: ${esc(o.pickup_store_name)}` : ' na loja'}`} · ${esc(CB.PAY_METHOD[o.payment_method] || o.payment_method)}</p>
           ${o.status === 'aguardando_pagamento' && o.expires_at ? `<p class="small">Reserva válida até <strong>${CB.dt(o.expires_at)}</strong>.</p>` : ''}
           ${canPay ? payDemo(o) : ''}
           ${o.payment_method === 'retirada' && o.payment_status === 'pendente' && o.status !== 'cancelado' ? '<div class="notice notice-info">Pagamento na retirada: pague no balcão ao buscar o produto. A loja registra o pagamento no sistema.</div>' : ''}
@@ -795,6 +874,7 @@
     [/^\/galeria$/, (m, q) => pageGallery(q)],
     [/^\/duvidas$/, pageFaq],
     [/^\/contato$/, pageContact],
+    [/^\/lojas$/, pageStores],
     [/^\/carrinho$/, pageCart],
     [/^\/checkout$/, pageCheckout],
     [/^\/pedido\/([A-Z0-9-]+)$/i, (m, q) => pageOrder(m[1], q)],
@@ -837,7 +917,7 @@
     document.getElementById('footerContact').innerHTML = `
       <li><a href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp ${esc(S.whatsapp_display)}</a></li>
       ${S.email ? `<li>${esc(S.email)}</li>` : ''}
-      <li>${esc(S.address)}</li>
+      ${(S.stores || []).length ? S.stores.map((st) => `<li><a href="#/lojas">${esc(st.name.replace(/^Cardoso Baterias\s*/, 'Loja '))}</a>${st.phone ? ` · ${esc(st.phone)}` : ''}</li>`).join('') : `<li>${esc(S.address)}</li>`}
       <li class="small">Área: ${esc(S.service_area)}</li>`;
     document.getElementById('footerHours').innerHTML = CB.nl2br(S.business_hours);
     document.getElementById('footerSocial').innerHTML = [
@@ -860,6 +940,7 @@
     };
     try {
       S = await CB.get('/api/public/settings');
+      S.stores = await CB.get('/api/public/stores');
       CB.settings = S;
       applySettings();
     } catch (e) {

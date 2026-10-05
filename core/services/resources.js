@@ -79,6 +79,37 @@ const RESOURCES = {
       ...get().prepare(`SELECT COUNT(*) AS order_count, COALESCE(SUM(CASE WHEN status='concluido' THEN total_cents ELSE 0 END),0) AS total_spent_cents FROM orders WHERE customer_id = ?`).get(r.id),
     }),
   },
+  stores: {
+    table: 'stores',
+    label: 'Loja',
+    order: 'sort, id',
+    search: ['name', 'neighborhood', 'city'],
+    public: true,
+    publicOmit: ['notes'],
+    schema: {
+      name: { type: 'string', label: 'Nome da unidade', required: true, max: 100 },
+      neighborhood: { type: 'string', label: 'Bairro/região', max: 80 },
+      city: { type: 'string', label: 'Cidade', max: 80 },
+      address: { type: 'text', label: 'Endereço', max: 300 },
+      phone: { type: 'string', label: 'Telefone', max: 30 },
+      whatsapp: { type: 'string', label: 'WhatsApp (55 + DDD + número)', max: 13, pattern: /^(\d{12,13})?$/, patternMessage: 'Use 55 + DDD + número, só dígitos (ou deixe vazio).' },
+      hours: { type: 'text', label: 'Horários', max: 500 },
+      maps_url: { type: 'url', label: 'Link do Google Maps', max: 500 },
+      image: img,
+      rating: { type: 'string', label: 'Nota (ex.: 4,9)', max: 4, pattern: /^([0-5]([,.]\d)?)?$/, patternMessage: 'Use uma nota de 0 a 5, ex.: 4,9.' },
+      rating_count: { type: 'int', label: 'Nº de avaliações', min: 0, max: 1000000 },
+      rating_source: { type: 'string', label: 'Fonte da nota', max: 120 },
+      review_quote: { type: 'string', label: 'Trecho de avaliação', max: 300 },
+      notes: { type: 'string', label: 'Observações', max: 300 },
+      pickup_enabled: { type: 'bool', label: 'Aceita retirada de pedidos', default: true },
+      active: { type: 'bool', label: 'Ativa', default: true },
+      sort: { type: 'int', label: 'Ordem', min: 0, max: 999, default: 0 },
+    },
+    beforeDelete: (id) => {
+      const n = get().prepare('SELECT COUNT(*) c FROM orders WHERE pickup_store_id = ?').get(id).c;
+      if (n) throw new AppError(409, `Loja usada em ${n} pedido(s). Desative-a em vez de excluir.`);
+    },
+  },
   services: {
     table: 'services',
     label: 'Serviço',
@@ -158,6 +189,7 @@ function list(name, { q, publicOnly = false } = {}) {
     for (let i = 0; i < r.search.length; i++) args.push(`%${String(q).toLowerCase()}%`);
   }
   const rows = get().prepare(`SELECT * FROM ${r.table} ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY ${r.order}`).all(...args);
+  if (publicOnly && r.publicOmit) for (const row of rows) for (const k of r.publicOmit) delete row[k];
   return r.extra && !publicOnly ? rows.map(r.extra) : rows;
 }
 

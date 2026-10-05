@@ -111,7 +111,7 @@ const services = {
 for (const [k, v] of Object.entries(services)) write(`services/${k}.svg`, v);
 
 /* ---------- galeria ---------- */
-const sign = (x, y) => `<rect x='${x}' y='${y}' width='360' height='70' rx='8' fill='${K}'/><text x='${x + 180}' y='${y + 47}' ${font} font-size='38' font-weight='800' font-style='italic' fill='${W}' text-anchor='middle'>CARDOSO <tspan fill='${Y}'>BATERIAS</tspan></text>`;
+const sign = (x, y) => `<rect x='${x}' y='${y}' width='360' height='70' rx='8' fill='${K}'/><text x='${x + 180}' y='${y + 47}' ${font} font-size='30' font-weight='800' font-style='italic' fill='${W}' text-anchor='middle'>CARDOSO <tspan fill='${Y}'>BATERIAS</tspan></text>`;
 const gallery = {
   fachada: scene(800, 600, `<rect x='0' y='420' width='800' height='180' fill='#3a3a3a'/><rect x='120' y='130' width='560' height='300' fill='#f2f2f2'/><rect x='120' y='130' width='560' height='26' fill='${Y}'/>${sign(220, 170)}<rect x='170' y='270' width='200' height='160' fill='#9fc3d9'/><rect x='420' y='270' width='210' height='160' fill='#2a2a2a'/>${miniBattery(190, 300, 0.7)}${miniBattery(300, 330, 0.5)}`, true, '#6fa8cf'),
   balcao: scene(800, 600, `<rect x='0' y='380' width='800' height='220' fill='#2a2a2a'/><rect x='80' y='330' width='640' height='70' fill='${Y}'/>${person(400, 250, 1.3, W)}${miniBattery(120, 220, 0.8)}${sign(220, 60)}`, true, '#e9e9e9'),

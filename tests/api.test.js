@@ -52,17 +52,28 @@ test('API do servidor: autenticação, pedido, relatórios e persistência após
     for (const c of [45, 50, 60, 70, 90]) assert.ok(caps.has(c), `capacidade ${c}Ah`);
 
     // pedido pelo site
-    const p = products.body.find((x) => x.available_qty >= 2);
-    const tooMany = await call('POST', '/api/public/orders', { name: 'Teste API', phone: '11988887777', fulfillment: 'retirada', paymentMethod: 'pix', items: [{ productId: p.id, quantity: p.available_qty + 1 }] });
+    const stores = (await call('GET', '/api/public/stores')).body;
+    assert.equal(stores.length, 3, 'três unidades cadastradas');
+    assert.equal(stores[0].notes, undefined, 'observações internas não são públicas');
+    const p0 = products.body.find((x) => x.available_qty >= 2);
+    const detail = (await call('GET', `/api/public/products/${p0.id}`)).body;
+    const st = detail.stores_stock.find((x) => x.available_qty >= 2);
+    const p = { ...p0, available_qty: st.available_qty };
+    const pickupStoreId = st.store_id;
+    const tooMany = await call('POST', '/api/public/orders', { name: 'Teste API', phone: '11988887777', fulfillment: 'retirada', pickupStoreId, paymentMethod: 'pix', items: [{ productId: p.id, quantity: p.available_qty + 1 }] });
     assert.equal(tooMany.status, 409);
-    const order = await call('POST', '/api/public/orders', { name: 'Teste API', phone: '11988887777', fulfillment: 'retirada', paymentMethod: 'pix', items: [{ productId: p.id, quantity: 1 }] });
+    const order = await call('POST', '/api/public/orders', { name: 'Teste API', phone: '11988887777', fulfillment: 'retirada', pickupStoreId, paymentMethod: 'pix', items: [{ productId: p.id, quantity: 1 }] });
     assert.equal(order.status, 201);
     assert.match(order.body.whatsapp_url, /^https:\/\/wa\.me\/5511962986718\?text=/);
     assert.ok(decodeURIComponent(order.body.whatsapp_url.split('text=')[1]).includes(order.body.code));
     const after = await call('GET', `/api/public/products/${p.id}`);
-    assert.equal(after.body.available_qty, p.available_qty - 1);
+    assert.equal(after.body.available_qty, p0.available_qty - 1);
+    assert.equal(after.body.stores_stock.find((x) => x.store_id === pickupStoreId).available_qty, st.available_qty - 1);
+    assert.match(decodeURIComponent(order.body.whatsapp_url), /retirada na loja — Cardoso Baterias/);
 
     // relatórios
+    const matrix = await call('GET', '/api/admin/stock/matrix', null, token);
+    assert.equal(matrix.body.stores.length, 3);
     for (const t of ['vendas', 'pedidos', 'estoque', 'movimentacoes']) {
       const r = await call('GET', `/api/admin/reports/${t}`, null, token);
       assert.equal(r.status, 200, t);

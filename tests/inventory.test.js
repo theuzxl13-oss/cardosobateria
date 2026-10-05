@@ -110,6 +110,7 @@ test('estoque nunca fica negativo (regras e restrições do banco)', async () =>
   assert.equal(product(p.id).stock_qty, 2);
   assert.throws(() => db.get().prepare('UPDATE products SET stock_qty = -1 WHERE id = ?').run(p.id), /constraint/i);
   assert.throws(() => db.get().prepare('UPDATE products SET reserved_qty = 99 WHERE id = ?').run(p.id), /constraint/i);
+  assert.throws(() => db.get().prepare('UPDATE store_stock SET stock_qty = -1 WHERE product_id = ?').run(p.id), /constraint/i);
 });
 
 test('movimentações registram data, quantidade, motivo e responsável', async () => {
@@ -229,4 +230,67 @@ test('venda de balcão pode ser registrada, paga e concluída numa só operaçã
   assert.equal(product(p.id).stock_qty, 1);
   rejects(() => orders.createCounterSale({ name: 'Balcão', phone: '11900000000', items: [{ productId: p.id, quantity: 2 }], complete: true }, { user: 'Admin' }), 409);
   assert.equal(product(p.id).stock_qty, 1);
+});
+
+/* ---------------- Estoque por loja ---------------- */
+const { assertTotals } = require('./helpers');
+
+test('retirada reserva na loja escolhida; outra loja sem estoque é recusada', async () => {
+  await freshDb();
+  const { p, storeA, storeB } = fixture({ stock: 3 }); // estoque inicial na Loja A
+  rejects(() => orders.createOrder(checkout([{ productId: p.id, quantity: 1 }], { pickupStoreId: storeB.id })), 409, /Loja B/);
+  const o = orders.createOrder(checkout([{ productId: p.id, quantity: 2 }], { pickupStoreId: storeA.id }));
+  assert.equal(o.stock_store_id, storeA.id);
+  assert.equal(o.pickup_store_name, 'Loja A');
+  assert.equal(inventory.storeRow(p.id, storeA.id).reserved_qty, 2);
+  assert.equal(inventory.storeRow(p.id, storeB.id).reserved_qty, 0);
+  orders.changeStatus(o.id, 'concluido', { user: 'T' });
+  assert.equal(inventory.storeRow(p.id, storeA.id).stock_qty, 1);
+  assertTotals(p.id);
+});
+
+test('transferência entre lojas move o estoque e respeita o disponível', async () => {
+  await freshDb();
+  const { p, storeA, storeB } = fixture({ stock: 3 });
+  orders.createOrder(checkout([{ productId: p.id, quantity: 2 }], { pickupStoreId: storeA.id }));
+  rejects(() => inventory.registerManual({ productId: p.id, storeId: storeA.id, toStoreId: storeB.id, type: 'transferencia', quantity: 2, reason: 'x', user: 'T' }), 409, /disponível/);
+  rejects(() => inventory.registerManual({ productId: p.id, storeId: storeA.id, toStoreId: storeA.id, type: 'transferencia', quantity: 1, reason: 'x', user: 'T' }), 422);
+  inventory.registerManual({ productId: p.id, storeId: storeA.id, toStoreId: storeB.id, type: 'transferencia', quantity: 1, reason: 'reforço', user: 'T' });
+  assert.deepEqual(inventory.storeRow(p.id, storeA.id), { stock_qty: 2, reserved_qty: 2 });
+  assert.deepEqual(inventory.storeRow(p.id, storeB.id), { stock_qty: 1, reserved_qty: 0 });
+  assert.equal(product(p.id).stock_qty, 3, 'total não muda na transferência');
+  const ms = movements("reason LIKE 'Transferência%'");
+  assert.equal(ms.length, 2);
+  assert.deepEqual(ms.map((m) => [m.type, m.store_name]), [['saida', 'Loja A'], ['entrada', 'Loja B']]);
+  // agora a Loja B atende retirada
+  orders.createOrder(checkout([{ productId: p.id, quantity: 1 }], { pickupStoreId: storeB.id }));
+  assertTotals(p.id);
+});
+
+test('entrega escolhe uma loja que tenha todos os itens; sem nenhuma, recusa', async () => {
+  await freshDb();
+  const { p, p2, storeA, storeB } = fixture({ stock: 3 });
+  // p só na Loja A; p2 movido inteiro para a Loja B
+  inventory.registerManual({ productId: p2.id, storeId: storeA.id, toStoreId: storeB.id, type: 'transferencia', quantity: 5, reason: 'x', user: 'T' });
+  const addr = { street: 'Rua A', number: '1', district: 'Centro', city: 'SP' };
+  const o = orders.createOrder(checkout([{ productId: p2.id, quantity: 1 }], { fulfillment: 'entrega', address: addr }));
+  assert.equal(o.stock_store_id, storeB.id);
+  rejects(() => orders.createOrder(checkout([{ productId: p.id, quantity: 1 }, { productId: p2.id, quantity: 1 }], { fulfillment: 'entrega', address: addr })), 409, /Nenhuma loja/);
+  const q = orders.quote([{ productId: p.id, quantity: 1 }]);
+  assert.deepEqual(q.stores.map((s) => [s.name, s.ok]), [['Loja A', true], ['Loja B', false]]);
+  assertTotals(p.id);
+  assertTotals(p2.id);
+});
+
+test('ajuste e cancelamento operam na loja do pedido', async () => {
+  await freshDb();
+  const { p, storeA, storeB } = fixture({ stock: 3 });
+  inventory.registerManual({ productId: p.id, storeId: storeB.id, type: 'ajuste', newQty: 4, reason: 'contagem', user: 'T' });
+  assert.equal(product(p.id).stock_qty, 7);
+  const o = orders.createOrder(checkout([{ productId: p.id, quantity: 4 }], { pickupStoreId: storeB.id }));
+  rejects(() => inventory.registerManual({ productId: p.id, storeId: storeB.id, type: 'ajuste', newQty: 3, reason: 'contagem', user: 'T' }), 409, /reservas/);
+  orders.changeStatus(o.id, 'cancelado', { user: 'T' });
+  assert.deepEqual(inventory.storeRow(p.id, storeB.id), { stock_qty: 4, reserved_qty: 0 });
+  assert.deepEqual(inventory.storeRow(p.id, storeA.id), { stock_qty: 3, reserved_qty: 0 });
+  assertTotals(p.id);
 });

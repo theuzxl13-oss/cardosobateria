@@ -160,7 +160,7 @@ function reply(message, { history = [] } = {}) {
   const brands = get().prepare('SELECT id, name FROM brands').all();
   const brandHit = brands.find((b) => text.includes(norm(b.name)));
   const productWords = has(text, ['bateria', 'preco', 'valor', 'quanto', 'custa', 'estoque', 'disponivel', 'disponibilidade', 'tem ', 'promoc', 'oferta', 'efb', 'agm', 'start stop']);
-  if (ahMatch || brandHit || (productWords && !has(text, ['entrega', 'frete', 'horario', 'servico', 'pagamento', 'pix', 'cartao', 'instala', 'troca', 'teste', 'descarte', 'usada', 'velha', 'nao liga', 'nao pega']))) {
+  if (ahMatch || brandHit || (productWords && !has(text, ['entrega', 'frete', 'horario', 'servico', 'pagamento', 'pix', 'cartao', 'instala', 'troca', 'teste', 'descarte', 'usada', 'velha', 'nao liga', 'nao pega', 'loja', 'unidade', 'endereco', 'embu', 'cipo', 'angela']))) {
     const f = {};
     if (ahMatch) f.capacity = ahMatch[1];
     if (brandHit) f.brand = brandHit.id;
@@ -206,6 +206,21 @@ function reply(message, { history = [] } = {}) {
       text: `Fazemos entrega na área de atendimento: ${s.service_area}.\nFrete: ${brl(s.delivery_fee_cents)}${s.delivery_free_above_cents ? ` (grátis em compras a partir de ${brl(s.delivery_free_above_cents)})` : ''}.\n${s.delivery_info}`,
     });
   }
+  // unidades / endereço / telefone das lojas
+  if (!has(text, ['retira', 'pegar']) && has(text, ['loja', 'lojas', 'unidade', 'unidades', 'endereco', 'onde fica', 'onde voces', 'localizacao', 'embu', 'cipo', 'jardim angela', 'angela', 'filial'])) {
+    const stores = get().prepare('SELECT * FROM stores WHERE active = 1 ORDER BY sort, id').all();
+    if (stores.length) {
+      const hit = stores.filter((st) => text.includes(norm(st.neighborhood)) && norm(st.neighborhood).length > 2);
+      const list = hit.length ? hit : stores;
+      return out({
+        text: `${list.length > 1 ? 'Nossas lojas' : 'Unidade'}:\n${list
+          .map((st) => `• ${st.name}${st.address ? ` — ${st.address}` : ''}${st.phone ? ` — Tel. ${st.phone}` : ''}${st.hours ? ` — ${st.hours.split('\n')[0]}` : ''}`)
+          .join('\n')}\n\nVeja como chegar em "Nossas lojas".`,
+        links: [{ label: 'Nossas lojas', href: '#/lojas' }],
+      });
+    }
+  }
+
   // retirada / endereço
   if (has(text, ['retira', 'buscar', 'pegar na loja', 'endereco', 'onde fica', 'localizacao', 'local', 'loja fisica'])) {
     return out({
@@ -214,6 +229,10 @@ function reply(message, { history = [] } = {}) {
   }
   // horários
   if (has(text, ['horario', 'abre', 'fecha', 'funciona', 'aberto', 'sabado', 'domingo', 'feriado'])) {
+    const stores = get().prepare("SELECT name, hours FROM stores WHERE active = 1 AND hours <> '' ORDER BY sort, id").all();
+    if (stores.length) {
+      return out({ text: `Horários por unidade:\n${stores.map((st) => `• ${st.name}: ${st.hours.replace(/\n/g, ' ')}`).join('\n')}\n\nPara confirmar o horário de hoje, fale com a loja pelo WhatsApp.` });
+    }
     return out({ text: `Horário de atendimento:\n${s.business_hours}` });
   }
   // serviços

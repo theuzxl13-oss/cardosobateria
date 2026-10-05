@@ -1284,7 +1284,10 @@ legend {
 .main-nav a {
   white-space: nowrap;
 }
-@media (min-width: 961px) and (max-width: 1240px) {
+@media (min-width: 961px) and (max-width: 1400px) {
+  .main-nav .nav-compact-hide {
+    display: none;
+  }
   .main-nav a {
     padding: 10px 7px;
     font-size: 0.88rem;
@@ -1307,4 +1310,102 @@ legend {
 select:disabled {
   background: #ececec;
   color: #888;
+}
+
+/* ---------- Lojas / avaliações ---------- */
+.stores-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 16px;
+}
+.store-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-top: 5px solid var(--yellow);
+}
+.store-card img {
+  aspect-ratio: 16/7;
+  object-fit: cover;
+  width: 100%;
+}
+.st-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+.st-body h3 {
+  font-size: 1.4rem;
+  margin: 0;
+}
+.rating {
+  font-size: 0.95rem;
+}
+.stars {
+  color: #f5a400;
+  letter-spacing: 1px;
+}
+.st-info {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 0.92rem;
+}
+.st-info li {
+  display: flex;
+  gap: 8px;
+}
+.review {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--gray-50);
+  border-left: 4px solid var(--yellow);
+  border-radius: 6px;
+  font-style: italic;
+  font-size: 0.92rem;
+}
+.review cite {
+  display: block;
+  font-style: normal;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.st-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hero-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 18px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #eee;
+  text-decoration: none;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+.hero-rating:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.store-avail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.st-stock {
+  margin-top: 4px;
 }

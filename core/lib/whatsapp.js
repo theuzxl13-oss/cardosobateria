@@ -19,7 +19,7 @@ function orderMessage(order, items) {
   if (order.shipping_cents) lines.push(`Frete: ${brl(order.shipping_cents)}`);
   if (order.discount_cents) lines.push(`Desconto: ${brl(order.discount_cents)}`);
   lines.push(`Total: ${brl(order.total_cents)}`);
-  lines.push(order.fulfillment === 'entrega' ? 'Recebimento: entrega' : 'Recebimento: retirada na loja');
+  lines.push(order.fulfillment === 'entrega' ? 'Recebimento: entrega' : `Recebimento: retirada na loja${order.pickup_store_name ? ` — ${order.pickup_store_name}` : ''}`);
   if (order.vehicle_info) lines.push(`Veículo: ${order.vehicle_info}`);
   return lines.join('\n');
 }

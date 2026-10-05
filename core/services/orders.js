@@ -70,7 +70,9 @@ function quote(items, fulfillment = 'retirada') {
   }
   const subtotal = lines.reduce((a, l) => a + l.total_cents, 0);
   const shipping = settings.shippingFor(fulfillment, subtotal, s);
+  const stores = storesThatCanFulfill(lines.map((l) => ({ productId: l.productId, quantity: l.quantity })));
   return {
+    stores,
     lines,
     problems,
     subtotal_cents: subtotal,
@@ -83,6 +85,19 @@ function quote(items, fulfillment = 'retirada') {
   };
 }
 
+/** Para cada loja ativa, informa se ela tem todos os itens disponíveis. */
+function storesThatCanFulfill(items) {
+  const stores = get().prepare('SELECT id, name, neighborhood, pickup_enabled FROM stores WHERE active = 1 ORDER BY sort, id').all();
+  return stores.map((st) => {
+    const missing = [];
+    for (const it of items) {
+      const r = inventory.storeRow(it.productId, st.id);
+      if (it.quantity > r.stock_qty - r.reserved_qty) missing.push(it.productId);
+    }
+    return { id: st.id, name: st.name, neighborhood: st.neighborhood, pickup_enabled: !!st.pickup_enabled, ok: missing.length === 0, missing };
+  });
+}
+
 const checkoutSchema = {
   name: { type: 'string', label: 'Nome', required: true, min: 3, max: 120 },
   phone: { type: 'phone', label: 'Telefone', required: true },
@@ -91,6 +106,8 @@ const checkoutSchema = {
   fulfillment: { type: 'enum', label: 'Forma de recebimento', required: true, values: ['retirada', 'entrega'] },
   paymentMethod: { type: 'enum', label: 'Forma de pagamento', required: true, values: ALL_PAYMENT_METHODS },
   notes: { type: 'text', label: 'Observações', max: 500 },
+  pickupStoreId: { type: 'int', label: 'Loja de retirada', min: 1 },
+  storeId: { type: 'int', label: 'Loja', min: 1 },
 };
 const addressSchema = {
   street: { type: 'string', label: 'Rua', required: true, max: 150 },
@@ -136,6 +153,16 @@ function createOrder(input, { source = 'site', user = 'Site', customerId = null 
       throw e;
     }
   }
+  let pickupStore = null;
+  if (data.fulfillment === 'retirada') {
+    const stores = get().prepare('SELECT id, name FROM stores WHERE active = 1 AND pickup_enabled = 1 ORDER BY sort, id').all();
+    if (data.pickupStoreId) {
+      pickupStore = stores.find((st) => st.id === data.pickupStoreId) || null;
+      if (!pickupStore) throw new AppError(422, 'Loja de retirada indisponível.', { fields: { pickupStoreId: 'Escolha uma das lojas disponíveis.' } });
+    } else if (source === 'site' && stores.length) {
+      throw new AppError(422, 'Escolha a loja para retirada.', { fields: { pickupStoreId: 'Escolha a loja onde vai retirar.' } });
+    }
+  }
   const items = normalizeItems(input.items);
   const discount = source === 'balcao' ? Math.max(0, Number(input.discountCents) || 0) : 0;
 
@@ -151,6 +178,25 @@ function createOrder(input, { source = 'site', user = 'Site', customerId = null 
       const unit = effectivePrice(p);
       return { p, quantity, unit, total: unit * quantity };
     });
+    // loja que vai reservar/baixar o estoque deste pedido
+    let stockStore;
+    if (pickupStore) stockStore = pickupStore;
+    else if (data.storeId) {
+      stockStore = inventory.loadStore(data.storeId);
+      if (!stockStore.active) throw new AppError(422, 'Loja inativa.', { fields: { storeId: 'Escolha uma loja ativa.' } });
+    } else {
+      const options = storesThatCanFulfill(items);
+      const ok = options.find((o) => o.ok);
+      if (ok) stockStore = { id: ok.id, name: ok.name };
+      else if (!options.length) stockStore = inventory.loadStore(inventory.defaultStoreId());
+      else {
+        for (const l of lines) {
+          const avail = Math.max(l.p.stock_qty - l.p.reserved_qty, 0);
+          if (l.quantity > avail) throw new AppError(409, `Estoque insuficiente para "${l.p.name}". Disponível: ${avail}.`, { productId: l.p.id, available: avail });
+        }
+        throw new AppError(409, 'Nenhuma loja tem todos os itens ao mesmo tempo. Divida a compra, escolha retirada em outra loja ou fale conosco pelo WhatsApp.');
+      }
+    }
     const subtotal = lines.reduce((a, l) => a + l.total, 0);
     const shipping = settings.shippingFor(data.fulfillment, subtotal, s);
     if (discount > subtotal + shipping) throw new AppError(422, 'Desconto maior que o valor do pedido.');
@@ -180,13 +226,16 @@ function createOrder(input, { source = 'site', user = 'Site', customerId = null 
         subtotal, shipping, discount, total, data.paymentMethod, data.notes || '', expires, user, ts, ts
       );
     const orderId = r.lastInsertRowid;
+    get()
+      .prepare('UPDATE orders SET pickup_store_id = ?, pickup_store_name = ?, stock_store_id = ? WHERE id = ?')
+      .run(pickupStore ? pickupStore.id : null, pickupStore ? pickupStore.name : '', stockStore.id, orderId);
     const insItem = get().prepare(
       `INSERT INTO order_items (order_id, product_id, sku, name, brand, capacity_ah, warranty_months, unit_price_cents, unit_cost_cents, quantity, total_cents)
        VALUES (?,?,?,?,?,?,?,?,?,?,?)`
     );
     for (const l of lines) {
       insItem.run(orderId, l.p.id, l.p.sku, l.p.name, l.p.brand_name || '', l.p.capacity_ah, l.p.warranty_months, l.unit, l.p.cost_cents, l.quantity, l.total);
-      inventory.applyMovement({ productId: l.p.id, type: 'reserva', quantity: l.quantity, reason: `Reserva do pedido ${code}`, user, orderId });
+      inventory.applyMovement({ productId: l.p.id, storeId: stockStore.id, type: 'reserva', quantity: l.quantity, reason: `Reserva do pedido ${code}`, user, orderId });
     }
     addEvent(orderId, 'criado', source === 'site' ? 'Pedido criado pelo site. Estoque reservado.' : 'Venda registrada no painel. Estoque reservado.', user, ts);
     return getById(orderId);
@@ -222,6 +271,7 @@ function publicView(o) {
     customer_phone: o.customer_phone,
     vehicle_info: o.vehicle_info,
     fulfillment: o.fulfillment,
+    pickup_store_name: o.pickup_store_name || '',
     address: o.fulfillment === 'entrega' ? formatAddress({ street: o.address_street, number: o.address_number, complement: o.address_complement, district: o.address_district, city: o.address_city, zip: o.address_zip }) : '',
     subtotal_cents: o.subtotal_cents,
     shipping_cents: o.shipping_cents,
@@ -280,7 +330,7 @@ function changeStatus(orderId, newStatus, { user, reason = '' } = {}) {
     if (newStatus === 'concluido') {
       if (o.stock_state !== 'reservado') throw new AppError(409, 'Estoque deste pedido não está reservado; baixa não permitida.');
       for (const i of o.items) {
-        inventory.applyMovement({ productId: i.product_id, type: 'baixa_venda', quantity: i.quantity, reason: `Venda concluída — pedido ${o.code}`, user, orderId: o.id });
+        inventory.applyMovement({ productId: i.product_id, storeId: o.stock_store_id, type: 'baixa_venda', quantity: i.quantity, reason: `Venda concluída — pedido ${o.code}`, user, orderId: o.id });
       }
       sets.stock_state = 'baixado';
       sets.completed_at = ts;
@@ -288,13 +338,13 @@ function changeStatus(orderId, newStatus, { user, reason = '' } = {}) {
     } else if (newStatus === 'cancelado') {
       if (o.stock_state === 'reservado') {
         for (const i of o.items) {
-          inventory.applyMovement({ productId: i.product_id, type: 'liberacao', quantity: i.quantity, reason: `Cancelamento do pedido ${o.code}${reason ? ` — ${reason}` : ''}`, user, orderId: o.id });
+          inventory.applyMovement({ productId: i.product_id, storeId: o.stock_store_id, type: 'liberacao', quantity: i.quantity, reason: `Cancelamento do pedido ${o.code}${reason ? ` — ${reason}` : ''}`, user, orderId: o.id });
         }
         sets.stock_state = 'liberado';
         desc += ' Reserva de estoque liberada.';
       } else if (o.stock_state === 'baixado') {
         for (const i of o.items) {
-          inventory.applyMovement({ productId: i.product_id, type: 'devolucao', quantity: i.quantity, reason: `Devolução — cancelamento do pedido ${o.code}${reason ? ` — ${reason}` : ''}`, user, orderId: o.id });
+          inventory.applyMovement({ productId: i.product_id, storeId: o.stock_store_id, type: 'devolucao', quantity: i.quantity, reason: `Devolução — cancelamento do pedido ${o.code}${reason ? ` — ${reason}` : ''}`, user, orderId: o.id });
         }
         sets.stock_state = 'devolvido';
         desc += ' Itens devolvidos ao estoque.';
@@ -430,6 +480,7 @@ function createCounterSale(input, { user }) {
 }
 
 module.exports = {
+  storesThatCanFulfill,
   STATUSES, PAYMENT_STATUSES, TRANSITIONS, OPEN_STATUSES, SITE_PAYMENT_METHODS, ALL_PAYMENT_METHODS,
   effectivePrice, quote, createOrder, createCounterSale, getById, getByCode, getByCodeAndToken, publicView, lookup,
   changeStatus, setPaymentStatus, simulatePayment, expireOrders, list, formatAddress, addEvent,

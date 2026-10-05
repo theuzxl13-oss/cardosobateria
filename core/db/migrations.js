@@ -283,4 +283,63 @@ CREATE TABLE banners (
 );
 `,
   },
+  {
+    name: '002_stores',
+    sql: `
+-- Unidades da loja (exibidas no site e usadas na retirada)
+CREATE TABLE stores (
+  id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+  name               TEXT NOT NULL,
+  neighborhood       TEXT NOT NULL DEFAULT '',
+  city               TEXT NOT NULL DEFAULT '',
+  address            TEXT NOT NULL DEFAULT '',
+  phone              TEXT NOT NULL DEFAULT '',
+  whatsapp           TEXT NOT NULL DEFAULT '',
+  hours              TEXT NOT NULL DEFAULT '',
+  maps_url           TEXT NOT NULL DEFAULT '',
+  image              TEXT,
+  rating             TEXT NOT NULL DEFAULT '',
+  rating_count       INTEGER,
+  rating_source      TEXT NOT NULL DEFAULT '',
+  review_quote       TEXT NOT NULL DEFAULT '',
+  notes              TEXT NOT NULL DEFAULT '',
+  pickup_enabled     INTEGER NOT NULL DEFAULT 1,
+  active             INTEGER NOT NULL DEFAULT 1,
+  sort               INTEGER NOT NULL DEFAULT 0,
+  created_at         TEXT NOT NULL
+);
+ALTER TABLE orders ADD COLUMN pickup_store_id INTEGER REFERENCES stores(id) ON DELETE SET NULL;
+ALTER TABLE orders ADD COLUMN pickup_store_name TEXT NOT NULL DEFAULT '';
+`,
+  },
+  {
+    name: '003_store_stock',
+    sql: `
+-- Estoque por loja. products.stock_qty/reserved_qty continuam como TOTAL (soma das lojas).
+CREATE TABLE store_stock (
+  product_id   INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  store_id     INTEGER NOT NULL REFERENCES stores(id) ON DELETE RESTRICT,
+  stock_qty    INTEGER NOT NULL DEFAULT 0 CHECK (stock_qty >= 0),
+  reserved_qty INTEGER NOT NULL DEFAULT 0 CHECK (reserved_qty >= 0),
+  updated_at   TEXT,
+  PRIMARY KEY (product_id, store_id),
+  CHECK (reserved_qty <= stock_qty)
+);
+CREATE INDEX ix_store_stock_store ON store_stock(store_id);
+ALTER TABLE stock_movements ADD COLUMN store_id INTEGER REFERENCES stores(id) ON DELETE SET NULL;
+ALTER TABLE stock_movements ADD COLUMN store_name TEXT NOT NULL DEFAULT '';
+ALTER TABLE orders ADD COLUMN stock_store_id INTEGER REFERENCES stores(id) ON DELETE SET NULL;
+CREATE INDEX ix_mov_store ON stock_movements(store_id);
+
+-- Bancos já existentes: o estoque atual vai para a primeira loja (cria "Loja principal" se não houver nenhuma)
+INSERT INTO stores (name, active, sort, created_at)
+  SELECT 'Loja principal', 1, 0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  WHERE NOT EXISTS (SELECT 1 FROM stores) AND EXISTS (SELECT 1 FROM products WHERE stock_qty > 0 OR reserved_qty > 0);
+INSERT INTO store_stock (product_id, store_id, stock_qty, reserved_qty, updated_at)
+  SELECT p.id, (SELECT id FROM stores ORDER BY sort, id LIMIT 1), p.stock_qty, p.reserved_qty, p.updated_at
+  FROM products p WHERE EXISTS (SELECT 1 FROM stores) AND (p.stock_qty > 0 OR p.reserved_qty > 0);
+UPDATE orders SET stock_store_id = COALESCE(pickup_store_id, (SELECT id FROM stores ORDER BY sort, id LIMIT 1))
+  WHERE EXISTS (SELECT 1 FROM stores);
+`,
+  },
 ];

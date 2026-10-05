@@ -78,6 +78,7 @@ pub('GET', '/home', () => ({
   featured: catalog.listPublic({ featured: '1' }).slice(0, 8),
   promos: catalog.listPublic({ promo: '1' }).slice(0, 4),
   services: resources.list('services', { publicOnly: true }),
+  stores: resources.list('stores', { publicOnly: true }),
   faqs: resources.list('faqs', { publicOnly: true }).slice(0, 4),
 }));
 pub('GET', '/products', ({ query }) => catalog.listPublic(query));
@@ -87,7 +88,7 @@ pub('GET', '/vehicles/makes', () => catalog.vehicleMakes());
 pub('GET', '/vehicles/models', ({ query }) => catalog.vehicleModels(query.make));
 pub('GET', '/vehicles/years', ({ query }) => catalog.vehicleYears(query.make, query.model));
 pub('GET', '/vehicles/search', ({ query }) => catalog.vehicleSearch(query));
-for (const r of ['services', 'faqs', 'gallery', 'banners']) pub('GET', `/${r}`, () => resources.list(r, { publicOnly: true }));
+for (const r of ['services', 'faqs', 'gallery', 'banners', 'stores']) pub('GET', `/${r}`, () => resources.list(r, { publicOnly: true }));
 pub('POST', '/cart/quote', ({ body }) => orders.quote(body.items, body.fulfillment));
 pub('POST', '/orders', ({ body }) => {
   const o = orders.createOrder(body, { source: 'site', user: 'Site' });
@@ -137,6 +138,7 @@ adm('GET', '/stock/movements', ({ query }) => {
   const r = rangeQuery(query);
   return inventory.listMovements({
     productId: query.productId ? Number(query.productId) : null,
+    storeId: query.storeId ? Number(query.storeId) : null,
     type: query.type || null,
     from: r.start,
     to: r.end,
@@ -148,7 +150,9 @@ adm('POST', '/stock/movements', ({ body, user }) => {
   const data = validate(
     {
       productId: { type: 'int', label: 'Produto', required: true, min: 1 },
-      type: { type: 'enum', label: 'Tipo', required: true, values: ['entrada', 'saida', 'ajuste'] },
+      storeId: { type: 'int', label: 'Loja', required: true, min: 1 },
+      toStoreId: { type: 'int', label: 'Loja de destino', min: 1 },
+      type: { type: 'enum', label: 'Tipo', required: true, values: ['entrada', 'saida', 'ajuste', 'transferencia'] },
       quantity: { type: 'int', label: 'Quantidade', min: 1, max: 100000 },
       newQty: { type: 'int', label: 'Nova quantidade', min: 0, max: 100000 },
       reason: { type: 'string', label: 'Motivo', required: true, min: 3, max: 300 },
@@ -164,6 +168,7 @@ adm('POST', '/stock/movements', ({ body, user }) => {
   return catalog.getAdmin(data.productId);
 });
 
+adm('GET', '/stock/matrix', () => inventory.stockMatrix());
 adm('GET', '/orders', ({ query }) => {
   const r = rangeQuery(query);
   return orders.list({ status: query.status, paymentStatus: query.paymentStatus, source: query.source, q: query.q, from: r.start, to: r.end, limit: Math.min(Number(query.limit) || 50, 200), offset: Number(query.offset) || 0 });
@@ -174,6 +179,8 @@ adm('GET', '/orders/:id', ({ params }) => {
   o.whatsapp_url = waLink(o.customer_phone_digits.length <= 11 ? `55${o.customer_phone_digits}` : o.customer_phone_digits, `Olá, ${o.customer_name}! Aqui é da ${s.store_name} sobre o pedido ${o.code}.`);
   o.movements = inventory.listMovements({ orderId: o.id, limit: 100 }).items;
   o.allowed_status = orders.TRANSITIONS[o.status];
+  const st = o.stock_store_id ? require('../db').get().prepare('SELECT name FROM stores WHERE id = ?').get(o.stock_store_id) : null;
+  o.stock_store_name = st ? st.name : '';
   return o;
 });
 adm('POST', '/orders/:id/status', ({ params, body, user }) => orders.changeStatus(Number(params.id), body.status, { user: user.name, reason: String(body.reason || '').slice(0, 200) }));

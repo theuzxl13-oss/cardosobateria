@@ -12,7 +12,7 @@ const orders = require('./orders');
 const inventory = require('./inventory');
 
 /** Aumente ao mudar os dados demonstrativos: o modo navegador restaura a demo automaticamente. */
-const SEED_VERSION = '2';
+const SEED_VERSION = '3';
 
 const DEMO_NOTE = 'Aplicação demonstrativa — confirme a compatibilidade com a loja.';
 
@@ -115,6 +115,55 @@ const FAQS = [
   ['O que significa Ah?', 'Ah (ampère-hora) indica a capacidade da bateria. Use a capacidade indicada para o seu veículo; uma bateria diferente da especificada pode não ser adequada.', 'ah, amperagem, capacidade, amper'],
 ];
 
+// Unidades informadas pela loja (dados públicos do Google, consultados em 05/10/2026).
+// O que não estava visível ficou marcado como "a confirmar" e é editável no painel (Lojas).
+const MAPS = (q) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+const RATING_SOURCE = 'Google (consultado em 05/10/2026)';
+const STORES = [
+  {
+    name: 'Cardoso Baterias Embu-Guaçu',
+    neighborhood: 'Embu-Guaçu',
+    city: 'Embu-Guaçu - SP',
+    address: '[Endereço completo a confirmar]',
+    phone: '(11) 96298-6718',
+    whatsapp: '5511962986718',
+    hours: 'Aberto até as 18h\n(demais horários a confirmar)',
+    maps_url: MAPS('Cardoso Baterias Embu-Guaçu'),
+    rating: '4,9',
+    rating_count: 214,
+    review_quote: 'Baterias e pneus "remold". Ótimo atendimento, bons preços!',
+    notes: 'Na ficha do Google também aparece "Zap (35) 99776-5245" — confirmar se é um contato da loja.',
+  },
+  {
+    name: 'Cardoso Baterias Cipó',
+    neighborhood: 'Cipó',
+    city: '[Cidade a confirmar]',
+    address: 'R. Benedito Jandiro Soares / R. Manoel dos Santos — [endereço completo a confirmar]',
+    phone: '',
+    whatsapp: '',
+    hours: 'Abre às 8h30\n(demais horários a confirmar)',
+    maps_url: MAPS('Cardoso Baterias Cipó'),
+    rating: '5,0',
+    rating_count: 16,
+    review_quote: 'Já trocamos baterias dos nossos carros.',
+    notes: 'Telefone da unidade não estava visível — informar.',
+  },
+  {
+    name: 'Cardoso Baterias Jardim Ângela',
+    neighborhood: 'Jardim Ângela',
+    city: 'São Paulo - SP',
+    address: '[Endereço completo a confirmar]',
+    phone: '(11) 96260-4092',
+    whatsapp: '',
+    hours: 'Aberto até as 18h\n(demais horários a confirmar)',
+    maps_url: MAPS('Cardoso Baterias Jardim Ângela'),
+    rating: '4,9',
+    rating_count: 94,
+    review_quote: 'Troquei minha bateria no início do mês, fui muito bem atendido.',
+    notes: 'Confirmar se (11) 96260-4092 também atende pelo WhatsApp.',
+  },
+];
+
 const GALLERY = [
   ['Fachada da loja', 'Imagem ilustrativa da loja.', 'img/gallery/fachada.svg', 'loja'],
   ['Balcão de atendimento', 'Imagem ilustrativa do atendimento.', 'img/gallery/balcao.svg', 'loja'],
@@ -132,7 +181,7 @@ const BANNERS = [
 
 const TABLES_IN_DELETE_ORDER = [
   'stock_movements', 'payments', 'order_events', 'order_items', 'orders', 'product_applications', 'product_images',
-  'products', 'brands', 'categories', 'suppliers', 'customers', 'services', 'faqs', 'gallery_items', 'banners', 'settings',
+  'products', 'brands', 'categories', 'suppliers', 'customers', 'stores', 'services', 'faqs', 'gallery_items', 'banners', 'settings',
 ];
 
 /** Gerador pseudoaleatório determinístico (mesmos dados a cada restauração). */
@@ -213,6 +262,12 @@ function seedData() {
     GALLERY.forEach(([t, desc, img, cat], i) =>
       d.prepare('INSERT INTO gallery_items (title, description, image, category, active, sort, created_at) VALUES (?,?,?,?,1,?,?)').run(t, desc, img, cat, i + 1, ts)
     );
+    const storeIds = STORES.map((st, i) =>
+      d
+        .prepare(`INSERT INTO stores (name, neighborhood, city, address, phone, whatsapp, hours, maps_url, image, rating, rating_count, rating_source,
+          review_quote, notes, pickup_enabled, active, sort, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,1,?,?)`)
+        .run(st.name, st.neighborhood, st.city, st.address, st.phone, st.whatsapp, st.hours, st.maps_url, 'img/gallery/fachada.svg', st.rating, st.rating_count, RATING_SOURCE, st.review_quote, st.notes, i + 1, ts).lastInsertRowid
+    );
     BANNERS.forEach(([t, s, l, link, img], i) =>
       d.prepare('INSERT INTO banners (title, subtitle, cta_label, cta_link, image, active, sort, created_at) VALUES (?,?,?,?,?,1,?,?)').run(t, s, l, link, img, i + 1, ts)
     );
@@ -222,7 +277,15 @@ function seedData() {
     PRODUCTS.forEach((p, i) => {
       const qty = p[13];
       if (qty > 0) {
-        inventory.applyMovement({ productId: productId[p[0]], type: 'entrada', quantity: qty, reason: 'Estoque inicial (demonstrativo) — NF fictícia', user: ADMIN, supplierId: supplierIds[i % 3], unitCostCents: p[12] });
+        // distribui o estoque inicial entre as lojas (≈ 45% / 30% / 25%)
+        const a = Math.ceil(qty * 0.45);
+        const b = Math.floor(qty * 0.3);
+        const parts = [a, b, qty - a - b];
+        parts.forEach((q, k) => {
+          if (q > 0 && storeIds[k]) {
+            inventory.applyMovement({ productId: productId[p[0]], storeId: storeIds[k], type: 'entrada', quantity: q, reason: 'Estoque inicial (demonstrativo) — NF fictícia', user: ADMIN, supplierId: supplierIds[i % 3], unitCostCents: p[12] });
+          }
+        });
       }
     });
 
@@ -242,6 +305,7 @@ function seedData() {
         fulfillment,
         paymentMethod,
         items: skus.map((s) => ({ productId: productId[s], quantity: 1 })),
+        pickupStoreId: fulfillment === 'retirada' ? pick(storeIds) : undefined,
         address: fulfillment === 'entrega' ? { street: 'Rua Exemplo (fictícia)', number: String(100 + Math.floor(rnd() * 800)), district: 'Bairro Demonstração', city: 'São Paulo', zip: '00000-000' } : undefined,
       };
       let o;
@@ -291,17 +355,27 @@ function seedData() {
       }
       if (day === 20) {
         setClock(() => at(20, 8, 40));
-        inventory.applyMovement({ productId: productId['HEL-60D'], type: 'entrada', quantity: 8, reason: 'Reposição — NF fictícia 1023', user: ADMIN, supplierId: supplierIds[0], unitCostCents: 32000 });
-        inventory.applyMovement({ productId: productId['MOU-50D'], type: 'entrada', quantity: 6, reason: 'Reposição — NF fictícia 1024', user: ADMIN, supplierId: supplierIds[1], unitCostCents: 30500 });
+        inventory.applyMovement({ productId: productId['HEL-60D'], storeId: storeIds[0], type: 'entrada', quantity: 8, reason: 'Reposição — NF fictícia 1023', user: ADMIN, supplierId: supplierIds[0], unitCostCents: 32000 });
+        inventory.applyMovement({ productId: productId['MOU-50D'], storeId: storeIds[2], type: 'entrada', quantity: 6, reason: 'Reposição — NF fictícia 1024', user: ADMIN, supplierId: supplierIds[1], unitCostCents: 30500 });
       }
       if (day === 12) {
         setClock(() => at(12, 18, 10));
-        const p = inventory.loadProduct(productId['PIO-60D']);
-        inventory.registerManual({ productId: p.id, type: 'ajuste', newQty: p.stock_qty - 1, reason: 'Ajuste de inventário — avaria constatada na contagem (demonstrativo)', user: ADMIN });
+        const r = inventory.storeRow(productId['PIO-60D'], storeIds[0]);
+        if (r.stock_qty - 1 >= r.reserved_qty && r.stock_qty > 0) inventory.registerManual({ productId: productId['PIO-60D'], storeId: storeIds[0], type: 'ajuste', newQty: r.stock_qty - 1, reason: 'Ajuste de inventário — avaria constatada na contagem (demonstrativo)', user: ADMIN });
       }
       if (day === 8) {
         setClock(() => at(8, 11, 0));
-        inventory.applyMovement({ productId: productId['ZET-45D'], type: 'saida', quantity: 1, reason: 'Saída para garantia/troca com fornecedor (demonstrativo)', user: ADMIN });
+        const r = inventory.storeRow(productId['ZET-45D'], storeIds[0]);
+        if (r.stock_qty - r.reserved_qty >= 1) {
+          inventory.applyMovement({ productId: productId['ZET-45D'], storeId: storeIds[0], type: 'saida', quantity: 1, reason: 'Saída para garantia/troca com fornecedor (demonstrativo)', user: ADMIN });
+        }
+      }
+      if (day === 10) {
+        setClock(() => at(10, 9, 15));
+        const r = inventory.storeRow(productId['HEL-60D'], storeIds[0]);
+        if (r.stock_qty - r.reserved_qty >= 2) {
+          inventory.registerManual({ productId: productId['HEL-60D'], storeId: storeIds[0], toStoreId: storeIds[1], type: 'transferencia', quantity: 2, reason: 'Reforço de estoque (demonstrativo)', user: ADMIN });
+        }
       }
     }
     // a Zetta 70Ah esgota com duas vendas
@@ -345,4 +419,4 @@ function resetDemo(admin) {
   });
 }
 
-module.exports = { seedIfEmpty, resetDemo, ensureAdmin, storedSeedVersion, SEED_VERSION, PRODUCTS, APPLICATIONS, SERVICES, GALLERY, BANNERS };
+module.exports = { seedIfEmpty, resetDemo, ensureAdmin, storedSeedVersion, SEED_VERSION, STORES, PRODUCTS, APPLICATIONS, SERVICES, GALLERY, BANNERS };
